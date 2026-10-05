@@ -4,6 +4,16 @@ A Claude skill that turns a designer's brand thinking into an accessible, build-
 
 It interviews you one question at a time, plays back a decision brief for sign-off, then generates contrast-checked primitives and semantic tokens, Figma build scripts, a phased build plan and DTCG tokens. Spec: [docs/PRD.md](docs/PRD.md).
 
+## How it works (30 seconds)
+
+1. **Ask:** tell Claude *"Help me define a design system."*
+2. **Answer:** a short interview, one question at a time. Claude explains why it asks.
+3. **Approve:** read a one-page decision brief. Nothing is generated until you say yes.
+4. **Build:** Claude creates the variables, modes and text styles in **any Figma file you can edit**.
+5. **Use:** import the `.fig` into Claude Design, or take the code tokens.
+
+Full walkthrough with examples and FAQ: **[docs/HOW-TO-USE.md](docs/HOW-TO-USE.md)**.
+
 ## Install
 
 **Claude Code, as a plugin** (recommended; updates with the repo):
