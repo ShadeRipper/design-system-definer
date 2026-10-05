@@ -2,7 +2,7 @@
 
 A Claude skill that turns a designer's brand thinking into an accessible, build-ready token foundation and a Figma build plan. It covers stage 1 only (define); Figma builds the system and Claude Design imports the `.fig` file.
 
-It interviews you one question at a time, plays back a decision brief for sign-off, then generates contrast-checked primitives and semantic tokens, Figma build scripts, a phased build plan and DTCG tokens. Spec: [docs/PRD.md](docs/PRD.md).
+It interviews you one question at a time, plays back a decision brief for sign-off, then generates contrast-checked primitives and semantic tokens, Figma build scripts, a phased build plan and DTCG tokens. What it can and can't do: [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 
 ## How it works (30 seconds)
 
@@ -12,7 +12,7 @@ It interviews you one question at a time, plays back a decision brief for sign-o
 4. **Build:** Claude creates the variables, modes and text styles in **any Figma file you can edit**.
 5. **Use:** import the `.fig` into Claude Design, or take the code tokens.
 
-Full walkthrough with examples and FAQ: **[docs/HOW-TO-USE.md](docs/HOW-TO-USE.md)**.
+Full walkthrough with examples and FAQ: **[docs/HOW-TO-USE.md](docs/HOW-TO-USE.md)**. Exactly what it covers and where it stops: **[docs/CAPABILITIES.md](docs/CAPABILITIES.md)**.
 
 ## Install
 
@@ -31,7 +31,7 @@ sh install.sh            # macOS, Linux, Git Bash
 ./install.ps1            # Windows PowerShell
 ```
 
-**claude.ai and Claude Desktop:** upload `dist/design-system-definer.skill` (Settings, Capabilities, Skills). Rebuild it with `python tools/package.py`.
+**claude.ai and Claude Desktop:** download `design-system-definer.skill` from the [latest release](https://github.com/ShadeRipper/design-system-definer/releases/latest) and upload it (Settings, Capabilities, Skills). To build it yourself: `python tools/package.py`.
 
 Then ask: *"Help me define a design system."* Python 3.8+ is the only requirement; PyYAML is bundled.
 
@@ -64,7 +64,7 @@ python scripts/build.py examples/multi-brand-sample.yaml --approve --out ds-out
 - **Brands are modes, never collections.** Semantic tokens are aliases only.
 - **Indicator versus action split:** the fill can be light, but focus rings and selection marks use a darker step that meets 3:1.
 
-## Status (v0.1)
+## Status (v0.2.0, see [CHANGELOG](CHANGELOG.md))
 
 Generated and tested: primitives, device and brand/theme collections, contrast matrix, Figma build scripts, build plan, decision brief and records, DTCG. 74 tests; the multi-brand sample reproduces the structure of the real Multi-Brand DS Figma file (same collections, modes and variable names) with 0 failing pairs.
 
