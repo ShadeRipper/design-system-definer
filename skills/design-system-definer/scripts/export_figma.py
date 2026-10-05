@@ -180,25 +180,36 @@ def export_build_scripts(collections, cfg):
     return files
 
 
+def _find(collections, path):
+    for c in collections:
+        for v in c.variables:
+            if v.path == path:
+                return c, v
+    raise KeyError(path)
+
+
+def _resolve(collections, col, var):
+    """Follow aliases to a literal, using each collection's first mode."""
+    val = var.values[col.modes[0]]
+    while isinstance(val, Alias):
+        col = next(c for c in collections if c.name == val.collection)
+        var = col.get(val.target)
+        val = var.values[col.modes[0]]
+    return val
+
+
 def text_style_defs(collections, cfg):
-    """Text styles bound to the semantic/device variables. Font and weight use the first mode."""
-    by_name = {c.name: c for c in collections}
-    sem = by_name.get("Brand") or by_name.get("Theme")
-    dev = by_name.get("Device")
-    size_col = dev or sem
-    prims = by_name["Primitives"]
-    pvals = {v.path: v.values[prims.modes[0]] for v in prims.variables}
+    """Text styles bound to the canonical variables. Values come from each collection's first mode."""
     out = []
     for name, size_key, fam_role, wt_role in cfg["type"]["styles"]:
-        first_mode = (dev.modes[0] if dev else sem.modes[0])
-        size_alias = size_col.get(f"type/size/{size_key}").values[first_mode]
-        line_alias = size_col.get(f"type/line-height/{size_key}").values[first_mode]
-        fam_alias = sem.get(f"type/family/{fam_role}").values[sem.modes[0]]
-        wt_alias = sem.get(f"type/weight/{wt_role}").values[sem.modes[0]]
-        out.append({"name": name, "size": pvals[size_alias.target], "line": pvals[line_alias.target],
-                    "family": pvals[fam_alias.target], "weight": pvals[wt_alias.target],
-                    "bind": {"size": f"type/size/{size_key}", "line": f"type/line-height/{size_key}",
-                             "family": f"type/family/{fam_role}", "weight": f"type/weight/{wt_role}",
-                             "collection": {"fontSize": size_col.name, "lineHeight": size_col.name,
-                                            "fontFamily": sem.name, "fontWeight": sem.name}}})
+        paths = {"size": f"type/size/{size_key}", "line": f"type/line-height/{size_key}",
+                 "family": f"type/family/{fam_role}", "weight": f"type/weight/{wt_role}"}
+        found = {k: _find(collections, p) for k, p in paths.items()}
+        vals = {k: _resolve(collections, c, v) for k, (c, v) in found.items()}
+        out.append({"name": name, "size": vals["size"], "line": vals["line"], "family": vals["family"],
+                    "weight": vals["weight"],
+                    "bind": {**paths, "collection": {"fontSize": found["size"][0].name,
+                                                     "lineHeight": found["line"][0].name,
+                                                     "fontFamily": found["family"][0].name,
+                                                     "fontWeight": found["weight"][0].name}}})
     return out

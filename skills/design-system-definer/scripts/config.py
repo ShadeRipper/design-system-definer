@@ -9,7 +9,7 @@ import yaml  # noqa: E402  (vendored PyYAML, pure Python)
 
 PRESET_DIR = Path(__file__).resolve().parent.parent / "presets"
 CONTRAST_LEVELS = {"AA": {"text": 4.5, "ui": 3.0}, "AAA": {"text": 7.0, "ui": 4.5}}
-SUPPORTED_DIMENSIONS = ("brand", "theme", "device")
+SUPPORTED_DIMENSIONS = ("brand", "theme", "device", "platform", "density", "a11y", "context", "locale")
 STATUS_ROLES = {"error": "red", "success": "green", "warning": "amber", "info": "blue"}
 
 DEFAULT_STYLES = [
@@ -68,6 +68,30 @@ DEFAULTS = {
         "control": [48, 48],
         "icon": [20, 20],
     },
+    "motion": {"duration": {"short": 150, "medium": 250, "long": 400}},
+    "platform": {
+        "modes": ["Web", "iOS", "Android"],
+        "control": [44, 44, 48],  # touch targets: Apple HIG 44pt, Material 48dp
+        "icon": [20, 24, 24],
+        "duration": {"short": [150, 200, 100], "medium": [250, 350, 250], "long": [400, 500, 300]},
+    },
+    "density": {
+        "modes": ["Compact", "Comfortable", "Spacious"],
+        "inset": [8, 12, 16], "stack": [8, 16, 24], "section": [24, 32, 48],
+    },
+    "a11y": {"large_text_scale": 1.25, "large_focus_width": 3},
+    "context": {
+        "marketing_type": {
+            "display-xl": {"size": [40, 72], "line": [48, 80]},
+            "display-l": {"size": [32, 56], "line": [40, 64]},
+        },
+    },
+    "locale": {
+        "modes": ["Latin", "Japanese", "Arabic"],
+        "families": {"Japanese": "Noto Sans JP", "Arabic": "Noto Sans Arabic"},
+        "direction": {"Arabic": "rtl"},
+    },
+    "custom_dimensions": [],
     "tiers": {"component_tokens": "minimal"},
     "components": ["button", "text-field", "checkbox", "radio", "selectable-card",
                   "progress", "feedback"],
@@ -108,6 +132,27 @@ def resolve_contrast(value):
     if out["ui"] > out["text"]:
         raise ValueError("contrast.ui must not exceed contrast.text")
     return out
+
+
+def resolve_extends(raws):
+    """House of brands: a brand with `extends: <name>` inherits that brand's settings."""
+    by_name = {str(r["name"]): r for r in raws}
+
+    def resolve(r, seen=()):
+        parent = r.get("extends")
+        if not parent:
+            return copy.deepcopy(r)
+        if parent not in by_name:
+            raise ValueError(f"brand {r['name']!r} extends unknown brand {parent!r}")
+        if r["name"] in seen:
+            raise ValueError(f"brand extends cycle at {r['name']!r}")
+        merged = deep_merge(resolve(by_name[parent], seen + (r["name"],)), {k: v for k, v in r.items() if k != "extends"})
+        merged["name"] = r["name"]
+        if "slug" not in r:
+            merged.pop("slug", None)
+        return merged
+
+    return [resolve(r) for r in raws]
 
 
 def normalize_brand(raw, neutral_names):
@@ -154,20 +199,27 @@ def load_config(path):
 
     if not cfg["brands"]:
         raise ValueError("config needs at least one brand")
+    cfg["brands"] = resolve_extends(cfg["brands"])
     brands = [normalize_brand(b, neutral_names) for b in cfg["brands"]]
     cfg["brands"] = brands
 
+    custom = cfg["custom_dimensions"] or []
+    custom_names = [c["name"] for c in custom]
     dims = list(cfg["dimensions"]) or (["brand"] if len(brands) > 1 else [])
     bad = [d for d in dims if d not in SUPPORTED_DIMENSIONS]
     if bad:
-        raise ValueError(f"dimension(s) {bad} are not supported in v1; supported: "
-                         f"{list(SUPPORTED_DIMENSIONS)}. See references/system-types.md")
-    if "brand" in dims and "theme" in dims:
-        raise ValueError("brand and theme together are not supported in v1 (would need "
-                         "brand x theme mode combinations); choose one, or model dark mode "
-                         "as separate systems")
+        raise ValueError(f"dimension(s) {bad} are not built in; built-in: {list(SUPPORTED_DIMENSIONS)}. "
+                         "For anything else define it under custom_dimensions (see references/config-reference.md)")
+    if len(set(dims)) != len(dims):
+        raise ValueError("dimensions contains duplicates")
     if len(brands) > 1 and "brand" not in dims:
         raise ValueError("more than one brand requires the 'brand' dimension")
+    for c in custom:
+        if not c.get("modes") or not c.get("tokens"):
+            raise ValueError(f"custom dimension {c.get('name')!r} needs modes and tokens")
+    if len(set(custom_names)) != len(custom_names) or set(custom_names) & set(
+            ["Primitives", "Brand", "Theme", "Device", "Platform", "Density", "A11y", "Locale"]):
+        raise ValueError("custom dimension names must be unique and not reuse a built-in collection name")
     cfg["dimensions"] = dims
 
     modes_brands = list(brands)
@@ -187,8 +239,25 @@ def load_config(path):
     n = len(dev["modes"])
     flat = [dev["margin"], dev["control"], dev["icon"], *dev["space"].values()]
     flat += [t["size"] for t in dev["type"].values()] + [t["line"] for t in dev["type"].values()]
+    flat += [t["size"] for t in cfg["context"]["marketing_type"].values()]
+    flat += [t["line"] for t in cfg["context"]["marketing_type"].values()]
     if any(len(x) != n for x in flat):
         raise ValueError(f"every device value needs {n} entries (one per device mode)")
+    plat = cfg["platform"]
+    pn = len(plat["modes"])
+    if any(len(x) != pn for x in [plat["control"], plat["icon"], *plat["duration"].values()]):
+        raise ValueError(f"every platform value needs {pn} entries (one per platform mode)")
+    den = cfg["density"]
+    dn = len(den["modes"])
+    if any(len(den[k]) != dn for k in ("inset", "stack", "section")):
+        raise ValueError(f"every density value needs {dn} entries (one per density mode)")
+    if "context" in dims:
+        have = {st[0] for st in cfg["type"]["styles"]}
+        for k in cfg["context"]["marketing_type"]:
+            words = " ".join(w.upper() if len(w) <= 2 else w.capitalize() for w in k.split("-"))
+            name = "Marketing/" + words
+            if name not in have:
+                cfg["type"]["styles"].append([name, f"marketing-{k}", "heading", "heading"])
     if cfg["tiers"]["component_tokens"] not in ("none", "minimal", "full"):
         raise ValueError("tiers.component_tokens must be none, minimal or full")
     return cfg

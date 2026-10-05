@@ -1,0 +1,2 @@
+system_type: multi-locale
+dimensions: [device, locale]

@@ -1,18 +1,22 @@
 """Decision brief (the playback the designer signs off) and decision records."""
 from levers import LEVERS
 from model import Alias
+from semantic import DIM_COLLECTION, DIM_WHY
 
 SYSTEM_WHY = {
     "single-brand-light-dark": "One brand that must work in light and dark; theme is the only axis of variation.",
+    "brand-theme": "Several brands, each in light and dark: brand palettes feed a theme layer.",
+    "house-of-brands": "A master brand with sub-brands that inherit its settings and override a few.",
+    "multi-platform": "One system that follows web, iOS and Android conventions.",
+    "responsive-density": "One brand whose spacing changes with device and density.",
+    "product-marketing": "Compact product UI plus an expressive marketing type scale.",
+    "accessibility-variants": "Large text and reduced motion as first-class modes.",
+    "multi-locale": "Scripts and reading directions beyond Latin.",
     "multi-brand": "Several brands share one core; brand is a mode of one collection, never a separate collection.",
     "marketing-site": "One brand with expressive type; only the device varies.",
     "custom": "Dimensions were chosen directly.",
 }
-DIM_WHY = {
-    "brand": ("Brand", "brands differ independently of device, so each brand is a mode"),
-    "theme": ("Theme", "light and dark change the same roles with different values"),
-    "device": ("Device", "spacing and type scale change with device, independent of brand or theme"),
-}
+COLLECTION_DIM = {v: k for k, v in DIM_COLLECTION.items()}
 RECORD_TEMPLATE = """# {title}
 
 **Status:** accepted
@@ -43,19 +47,18 @@ def _contrast_label(cfg):
 
 
 def build_brief(cfg, prims, collections, results):
-    sem = next(c for c in collections if c.name in ("Brand", "Theme"))
+    brand_col = next(c for c in collections if c.name == "Brand")
     failing = [r for r in results if not r.passed]
     L = [f"# Decision brief", ""]
     L += [f"System type: **{cfg['system_type']}**. {SYSTEM_WHY.get(cfg['system_type'], SYSTEM_WHY['custom'])}", ""]
     L += ["## Structure", "", "| Collection | Modes | Why |", "| --- | --- | --- |",
           "| Primitives | Value | raw ramps and scales; never bound by components |"]
     for c in collections:
-        if c.name == "Device":
-            L.append(f"| Device | {', '.join(c.modes)} | {DIM_WHY['device'][1]} |")
-        elif c.name == "Brand":
-            L.append(f"| Brand | {', '.join(c.modes)} | {DIM_WHY['brand'][1]} |")
-        elif c.name == "Theme":
-            L.append(f"| Theme | {', '.join(c.modes)} | {DIM_WHY['theme'][1]} |")
+        if c.name == "Primitives":
+            continue
+        dim = COLLECTION_DIM.get(c.name)
+        why = DIM_WHY.get(dim, "custom dimension defined in the config")
+        L.append(f"| {c.name} | {', '.join(c.modes)} | {why} |")
     L.append("")
     if "brand" in cfg["dimensions"]:
         inc = cfg["base_mode"] == "include"
@@ -92,33 +95,32 @@ def build_brief(cfg, prims, collections, results):
                 L.append(f"- *{word}* suggests: " + "; ".join(f"{k}: {v}" for k, v in lev.items()))
         if b.get("never"):
             L.append(f"- must never feel: {b['never']}")
-        mode = b["name"] if sem.name == "Brand" else None
-        if mode and mode in sem.modes:
-            g = lambda p: _step(sem.get(p).values[mode])  # noqa: E731
-            L.append(f"- derived: action fill `{g('color/action/primary/default')}`, text on it "
-                     f"`{g('color/action/on-primary')}`, indicator `{g('color/indicator')}`")
+        for label, roles in prims.derived.items():
+            if label == b["name"] or label.startswith(b["name"] + " /"):
+                L.append(f"- derived ({label}): action fill `{roles['color/action/primary/default']}`, text on it "
+                         f"`{roles['color/action/on-primary']}`, indicator `{roles['color/indicator']}`")
         L.append("")
-    if sem.name == "Theme":
-        for mode in sem.modes:
-            g = lambda p, mode=mode: _step(sem.get(p).values[mode])  # noqa: E731
-            L.append(f"- {mode}: page `{g('color/surface/page')}`, action fill "
-                     f"`{g('color/action/primary/default')}`, indicator `{g('color/indicator')}`")
-        L.append("")
+    brand_labels = {b["name"] for b in cfg["mode_brands"]}
+    for label, roles in prims.derived.items():
+        if label not in brand_labels and not any(label.startswith(n + " /") for n in brand_labels):
+            L.append(f"- {label}: page `{roles['color/surface/page']}`, action fill "
+                     f"`{roles['color/action/primary/default']}`, indicator `{roles['color/indicator']}`")
+    L.append("")
 
     L += ["## Accessibility", "",
           f"{len(results)} pairs checked, {len(failing)} failing."]
     for r in failing:
         L.append(f"- FAIL {r.id} ({r.mode}): {r.ratio:.2f}:1 < {r.required:g}:1"
                  + (f"; suggested fix {r.fix}" if r.fix else "; change the background, not the text"))
-    if sem.notes:
-        L += ["", "## Adjustments", ""] + [f"- {n}" for n in sem.notes]
+    if brand_col.notes:
+        L += ["", "## Adjustments", ""] + [f"- {n}" for n in brand_col.notes]
     L += ["", "## Sign-off", "", "Nothing is written until this brief is approved. "
           "Reply with changes, or approve to generate the files.", ""]
     return "\n".join(L)
 
 
 def build_records(cfg, prims, collections):
-    sem = next(c for c in collections if c.name in ("Brand", "Theme"))
+    brand_col = next(c for c in collections if c.name == "Brand")
     rec = {}
     structure = ", ".join(f"{c.name} ({', '.join(c.modes)})" for c in collections)
     rec["01-collection-structure.md"] = RECORD_TEMPLATE.format(
@@ -151,7 +153,7 @@ def build_records(cfg, prims, collections):
             decision="Base mode " + ("included." if inc else "omitted."),
             alternatives="- " + ("Omit it: every product ships with a known brand." if inc
                                  else "Include it: needed for white-label defaults and docs."),
-            consequences="Components default to the first mode: " + sem.modes[0] + ".")
+            consequences="Components default to the first mode: " + brand_col.modes[0] + ".")
     rec["05-component-tokens.md"] = RECORD_TEMPLATE.format(
         title="Component-level tokens", context="Missing control height, round radius and track color "
         "were found only while building components in earlier projects.",

@@ -37,38 +37,27 @@ def num(x):
     return str(x).replace(".", "-")
 
 
-def radius_key(v, cfg):
-    return "full" if v == "full" else num(v)
+def prim_path(kind, value):
+    """Primitive path for a ("prim", kind, value) spec."""
+    if kind == "radius":
+        return "radius/full" if value == "full" else f"radius/{num(value)}"
+    if kind == "family":
+        return f"font/family/{slugify(value)}"
+    prefix = {"space": "space", "border": "border", "size": "size", "font_size": "font/size",
+              "line": "font/line-height", "weight": "font/weight", "duration": "duration"}[kind]
+    return f"{prefix}/{num(value)}"
 
 
-def required_numbers(cfg):
-    """Numeric values the semantic/device tiers will alias, by primitive kind."""
-    dev, mode_brands = cfg["device"], cfg["mode_brands"]
-    space = {m * cfg["spacing"]["base"] for m in cfg["spacing"]["scale"]}
-    for vals in dev["space"].values():
-        space |= set(vals)
-    space |= set(dev["margin"])
-    sizes = set(cfg["size"]["scale"]) | set(dev["control"]) | set(dev["icon"])
-    font_sizes = set(cfg["type"]["scale"])
-    lines = set(cfg["type"]["line_heights"])
-    for t in dev["type"].values():
-        font_sizes |= set(t["size"])
-        lines |= set(t["line"])
-    radius = set(cfg["radius"]["scale"])
-    border = set(cfg["border"]["scale"])
-    weights = set(cfg["type"]["weights"])
-    families = {}
-    for b in mode_brands:
-        radius |= {v for v in b["radius"].values() if v != "full"}
-        border |= set(b["border"].values())
-        weights |= set(b["weights"].values())
-        for fam in b["fonts"].values():
-            families[slugify(fam)] = fam
-    return {"space": space, "size": sizes, "font_size": font_sizes, "line": lines,
-            "radius": radius, "border": border, "weight": weights, "family": families}
+def base_scales(cfg):
+    """Configured scales; the semantic plan's values are unioned in by build_primitives."""
+    return {"space": {m * cfg["spacing"]["base"] for m in cfg["spacing"]["scale"]},
+            "size": set(cfg["size"]["scale"]), "font_size": set(cfg["type"]["scale"]),
+            "line": set(cfg["type"]["line_heights"]), "radius": set(cfg["radius"]["scale"]),
+            "border": set(cfg["border"]["scale"]), "weight": set(cfg["type"]["weights"]),
+            "duration": set(), "family": {}}
 
 
-def build_primitives(cfg):
+def build_primitives(cfg, needed=None):
     col = Collection("Primitives", [PRIMITIVE_MODE])
     results, notes, ramps, values = [], [], {}, {}
     color = cfg["color"]
@@ -118,22 +107,19 @@ def build_primitives(cfg):
             add_ramp(f"color/{b['slug']}/{key}", f"{b['name']} {key}", hexv,
                      f"{b['name']} {key} ramp; anchor {hexv.upper()}")
 
-    req = required_numbers(cfg)
-    for px in sorted(req["space"]):
-        add(f"space/{num(px)}", "number", px, ["GAP"])
-    for px in sorted(req["radius"]):
-        add(f"radius/{num(px)}", "number", px, ["CORNER_RADIUS"])
+    req = base_scales(cfg)
+    for kind, vals in (needed or {}).items():
+        if kind == "family":
+            req["family"].update(vals)
+        else:
+            req[kind] |= {v for v in vals if v != "full"}
+    scopes = {"space": ["GAP"], "radius": ["CORNER_RADIUS"], "border": ["STROKE_FLOAT"],
+              "size": ["WIDTH_HEIGHT"], "font_size": ["FONT_SIZE"], "line": ["LINE_HEIGHT"],
+              "weight": ["FONT_WEIGHT"], "duration": []}
+    for kind in ("space", "radius", "border", "size", "font_size", "line", "weight", "duration"):
+        for v in sorted(req[kind]):
+            add(prim_path(kind, v), "number", v, scopes[kind], "")
     add("radius/full", "number", cfg["radius"]["full"], ["CORNER_RADIUS"], "Fully rounded")
-    for px in sorted(req["border"]):
-        add(f"border/{num(px)}", "number", px, ["STROKE_FLOAT"])
-    for px in sorted(req["size"]):
-        add(f"size/{num(px)}", "number", px, ["WIDTH_HEIGHT"])
-    for px in sorted(req["font_size"]):
-        add(f"font/size/{num(px)}", "number", px, ["FONT_SIZE"])
-    for px in sorted(req["line"]):
-        add(f"font/line-height/{num(px)}", "number", px, ["LINE_HEIGHT"])
-    for w in sorted(req["weight"]):
-        add(f"font/weight/{num(w)}", "number", w, ["FONT_WEIGHT"])
-    for slug, fam in req["family"].items():
+    for slug, fam in sorted(req["family"].items()):
         add(f"font/family/{slug}", "string", fam, ["FONT_FAMILY"])
     return Primitives(col, results, notes, ramps, values)

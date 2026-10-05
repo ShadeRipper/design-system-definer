@@ -32,7 +32,6 @@ GOTCHAS = [
 
 
 def build_plan(cfg, collections, script_names):
-    sem = next(c for c in collections if c.name in ("Brand", "Theme"))
     counts = ", ".join(f"{c.name}: {len(c.modes)} mode(s), {len(c.variables)} variables" for c in collections)
     fonts = sorted({b["fonts"][r] for b in cfg["mode_brands"] for r in ("heading", "body")})
     L = ["# Figma build plan", "",
@@ -55,15 +54,16 @@ def build_plan(cfg, collections, script_names):
           "## Phase 2: text styles", ""]
     if any(n.endswith("text-styles.js") for n in script_names):
         L.append("- [ ] Run the text-styles script; every style is bound to size, line height, family and weight variables.")
-    L += ["", "**CHECKPOINT 2 (human):** switch the frame mode through every "
-          f"{sem.name} mode and confirm the type changes.", "", "## Phase 3: components", "",
-          "One component per call set. Bind only to the tokens listed; never to primitives.", ""]
+    L += ["", "**CHECKPOINT 2 (human):** switch the frame mode through every mode of every "
+          "collection and confirm the type changes.", "", "## Phase 3: components", "",
+          "One component per call set. Bind only to the tokens listed, using the canonical names: never to primitives, "
+          "and never to layer inputs prefixed `palette/`, `brand/`, `device/`, `platform/` or `a11y/`.", ""]
     have = {v.path for c in collections for v in c.variables}
     for comp in cfg["components"]:
         toks = [t for t in COMPONENT_TOKENS.get(comp, []) if t in have]
         L += [f"### {comp}", "", f"- [ ] Build with `figma-generate-library`: variants, states, auto layout.",
               f"- [ ] Bind: {', '.join('`' + t + '`' for t in toks) if toks else '(no tokens mapped; define them in the config)'}",
-              f"- [ ] Check every {sem.name} mode in a screenshot.", "",
+              "- [ ] Check every mode of every collection in a screenshot.", "",
               f"**CHECKPOINT ({comp}):** designer approves before the next component.", ""]
     L += ["## Phase 4: hand-off", "",
           "- [ ] Download the `.fig` file and import it into Claude Design. If modes or descriptions are "

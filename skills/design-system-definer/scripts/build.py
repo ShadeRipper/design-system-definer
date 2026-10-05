@@ -17,18 +17,20 @@ from contrast import to_csv, to_markdown
 from export_dtcg import export_dtcg, style_dictionary_config
 from export_figma import export_build_scripts, export_native_json, text_style_defs
 from primitives import build_primitives
-from semantic import build_semantic, check_semantic
+from semantic import build_collections, check_semantic, plan_tokens, requirements
 
 
 def generate(config_path):
     cfg = load_config(config_path)
-    prims = build_primitives(cfg)
-    sem_cols = build_semantic(cfg, prims)
+    plan = plan_tokens(cfg)
+    prims = build_primitives(cfg, requirements(plan))
+    sem_cols, derived = build_collections(cfg, prims, plan)
+    prims.derived = derived
     collections = [prims.collection] + sem_cols
-    sem = next(c for c in sem_cols if c.name in ("Brand", "Theme"))
-    sem_results, sem_notes = check_semantic(cfg, prims, sem)
+    sem_results, sem_notes = check_semantic(cfg, prims, derived)
+    brand = next(c for c in collections if c.name == "Brand")
     results = prims.results + sem_results
-    notes = prims.notes + sem.notes + sem_notes
+    notes = prims.notes + brand.notes + sem_notes
     return cfg, prims, collections, results, notes
 
 

@@ -45,22 +45,20 @@ def export_dtcg(collections):
     return files
 
 
-def style_dictionary_config(collections):
-    """One CSS file per brand/theme mode x device mode, merging primitives + device + semantic."""
-    by = {c.name: c for c in collections}
-    sem = by.get("Brand") or by.get("Theme")
-    dev = by.get("Device")
+def style_dictionary_config(collections, cap=256):
+    """One CSS file per combination of modes, merging primitives with one mode of every collection."""
+    import itertools
+    multi = [c for c in collections if c.name != "Primitives"]
     combos = []
-    for sm in sem.modes:
-        for dm in (dev.modes if dev else [None]):
-            src = ["tokens/Primitives.tokens.json",
-                   f"tokens/{sem.name}.{slugify(sm)}.tokens.json"]
-            name = slugify(sm)
-            if dm:
-                src.insert(1, f"tokens/Device.{slugify(dm)}.tokens.json")
-                name += f"-{slugify(dm)}"
-            combos.append({"name": name, "source": src})
-    return ("// Run: npm i style-dictionary && node sd.config.mjs   (token files in ./tokens)\n"
+    for picks in itertools.product(*[c.modes for c in multi]):
+        src = ["tokens/Primitives.tokens.json"] + [f"tokens/{c.name}.{slugify(m)}.tokens.json"
+                                                    for c, m in zip(multi, picks)]
+        name = "-".join(slugify(m) for c, m in zip(multi, picks) if len(c.modes) > 1) or "tokens"
+        combos.append({"name": name, "source": src})
+    truncated = len(combos) > cap
+    combos = combos[:cap]
+    note = f"// First {cap} combinations only; trim or extend this array as needed.\n" if truncated else ""
+    return ("// Run: npm i style-dictionary && node sd.config.mjs   (token files in ./tokens)\n" + note +
             "import StyleDictionary from 'style-dictionary';\n"
             f"const combos = {json.dumps(combos, indent=2)};\n"
             "for (const c of combos) {\n"

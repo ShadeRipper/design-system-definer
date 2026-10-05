@@ -53,7 +53,7 @@ Always: `decision-brief.md`, `ds.config.yaml`, `contrast-matrix.md/.csv`, primit
 
 ## Known v1 limits (say so rather than improvising)
 
-Supported dimensions: `brand`, `theme`, `device`. `brand` plus `theme` together, and platform, density, a11y and locale dimensions, are not generated yet; the script stops with a clear message. Offer the closest supported structure and note the limit in the decision brief.
+Built-in dimensions: `brand`, `theme`, `device`, `platform`, `density`, `a11y`, `context`, `locale`; they combine freely (brand with theme layers palettes under a theme). Anything else goes in `custom_dimensions` ([system types](references/system-types.md)). Not generated: per-script line height, and anything that needs math between modes (Figma variables have none). Say so when it matters and record it in the brief.
 
 Native Figma variable JSON (`figma/`) is best-effort until validated against a real export; the `figma-build/` scripts are the verified path.
 

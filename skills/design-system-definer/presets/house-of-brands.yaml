@@ -1,0 +1,3 @@
+system_type: house-of-brands
+dimensions: [brand, device]
+base_mode: none

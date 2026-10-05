@@ -180,14 +180,16 @@ class SystemTypes(unittest.TestCase):
     def test_single_brand_light_dark(self):
         with tempfile.TemporaryDirectory() as d:
             cfg, prims, cols, results, _ = generate(write_cfg(d, SINGLE))
-            theme = next(c for c in cols if c.name == "Theme")
+            by = {c.name: c for c in cols}
+            theme = by["Theme"]
             self.assertEqual(theme.modes, ["Light", "Dark"])
             self.assertEqual([r for r in results if not r.passed], [])
             page = theme.get("color/surface/page").values
             self.assertNotEqual(page["Light"], page["Dark"])
-            # no device collection: type sizes live in the theme collection
-            self.assertNotIn("Device", [c.name for c in cols])
-            self.assertIn("type/size/body-m", theme.paths())
+            # brand is the single-mode base that owns shape, type and scale tokens
+            self.assertEqual(by["Brand"].modes, ["Acme"])
+            self.assertIn("type/size/body-m", by["Brand"].paths())
+            self.assertNotIn("Device", by)
 
     def test_marketing_site_device_only(self):
         with tempfile.TemporaryDirectory() as d:
@@ -196,16 +198,10 @@ class SystemTypes(unittest.TestCase):
             self.assertEqual(next(c for c in cols if c.name == "Brand").modes, ["Acme"])
             self.assertEqual([r for r in results if not r.passed], [])
 
-    def test_brand_and_theme_together_rejected(self):
+    def test_unknown_dimension_rejected_with_guidance(self):
         with tempfile.TemporaryDirectory() as d:
-            cfg = write_cfg(d, SAMPLE.read_text(encoding="utf-8") + "dimensions: [brand, theme]\n")
-            with self.assertRaises(ValueError):
-                load_config(cfg)
-
-    def test_unsupported_dimension_rejected_with_guidance(self):
-        with tempfile.TemporaryDirectory() as d:
-            cfg = write_cfg(d, SINGLE + "dimensions: [platform]\n")
-            with self.assertRaisesRegex(ValueError, "not supported in v1"):
+            cfg = write_cfg(d, SINGLE + "dimensions: [season]\n")
+            with self.assertRaisesRegex(ValueError, "custom_dimensions"):
                 load_config(cfg)
 
     def test_dark_mode_every_pair_passes_at_aaa(self):
@@ -288,7 +284,7 @@ class Exports(unittest.TestCase):
     def test_style_dictionary_config_parses(self):
         node = shutil.which("node")
         body = self.files["dtcg/sd.config.mjs"]
-        self.assertIn("lays-mobile", body)
+        self.assertIn("mobile-lays", body)
         if node:
             with tempfile.TemporaryDirectory() as d:
                 p = Path(d) / "x.mjs"

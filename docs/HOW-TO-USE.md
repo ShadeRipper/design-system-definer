@@ -106,7 +106,7 @@ Download the `.fig` file and import it into Claude Design, or give developers th
 
 **What if a colour fails contrast?** Export is blocked and Claude shows the failing pair with a suggested fix. For light brand colours (like yellow) the skill keeps your exact hex as a token but builds the ramp so it passes, and pairs the colour with dark text.
 
-**What can't it do yet?** Brand and light/dark in the same system, and platform, density, accessibility-variant and locale dimensions. Claude tells you if you ask for one.
+**What can it model?** Brand, light/dark, device, platform (web, iOS, Android), density, accessibility variants (large text, reduced motion), locales and a product-versus-marketing type scale, in any combination, plus your own custom axes. **What can't it do?** Per-script line heights, and anything that needs arithmetic between modes (Figma variables have none). Claude says so when you hit one.
 
 **Is anything sent anywhere?** The generator runs on your machine. The Figma scripts run in your Figma file through the connector you authorised.
 

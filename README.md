@@ -66,9 +66,9 @@ python scripts/build.py examples/multi-brand-sample.yaml --approve --out ds-out
 
 ## Status (v0.1)
 
-Generated and tested: primitives, device and brand/theme collections, contrast matrix, Figma build scripts, build plan, decision brief and records, DTCG. 49 tests; the multi-brand sample reproduces the structure of the real Multi-Brand DS Figma file (same collections, modes and variable names) with 0 failing pairs.
+Generated and tested: primitives, device and brand/theme collections, contrast matrix, Figma build scripts, build plan, decision brief and records, DTCG. 74 tests; the multi-brand sample reproduces the structure of the real Multi-Brand DS Figma file (same collections, modes and variable names) with 0 failing pairs.
 
-Supported dimensions: `brand`, `theme`, `device`. Not yet: brand plus theme together, platform, density, a11y and locale dimensions.
+Built-in dimensions: `brand`, `theme`, `device`, `platform`, `density`, `a11y`, `context`, `locale`, combinable, plus your own through `custom_dimensions`. Layering (for example brand under theme) is automatic. Not generated: per-script line heights, and anything that needs math between modes, because Figma variables have none.
 
 ```bash
 python -m unittest discover -s tests -v

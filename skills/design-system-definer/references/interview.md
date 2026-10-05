@@ -32,7 +32,9 @@ Flag contradictions: "cheerful" plus "corporate" excluded is consistent; "playfu
 
 ## 4. Variation
 
-Ask what varies independently: brand, light/dark, density, device, platform, locale. Derive one collection per dimension and show the mode table. v1 generates `brand`, `theme`, `device` (brand plus theme together is not generated yet). If the designer needs more, say so, pick the closest structure and record the limit.
+Ask what varies **independently** and walk the list: brand, light/dark, device, platform (web, iOS, Android), density, accessibility (large text, reduced motion), locale or script, product versus marketing type. Two things that always change together are one dimension. Derive one collection per dimension and show the mode table ([system-types.md](system-types.md)). Anything off the list becomes a `custom_dimensions` entry; ask what its modes are and which existing token each mode should use.
+
+Questions per dimension: *platform*: which platforms, and do you follow Apple 44pt and Material 48dp touch targets? *density*: which densities, and where do they differ (padding, gaps)? *a11y*: large text and reduced motion as modes? *locale*: which scripts, and are any right-to-left? *house of brands*: which brand is the master, and what does each sub-brand override?
 
 Multi-brand only: **Base mode?** Include it for white-label systems (the brand is unknown until runtime) and when components need a default look in docs and tests; omit it when every product always ships with a known brand. Set `base_mode: include` or `none`.
 

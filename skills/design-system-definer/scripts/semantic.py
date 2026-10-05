@@ -4,11 +4,13 @@ Every semantic color/number/string is an alias; only easing is a literal. The ru
 (not hand-picked steps) choose which ramp step each role points at, so a different
 anchor or contrast target re-derives a passing system.
 """
+from dataclasses import dataclass
+
 from color import contrast_ratio
 from config import STATUS_ROLES, slugify
 from contrast import check_pair
 from model import Alias, Collection, Variable
-from primitives import num, radius_key
+from primitives import prim_path, validate_path
 
 PRIM = "Primitives"
 DEVICE = "Device"
@@ -68,31 +70,6 @@ NUM_META = {
     "component/checkbox/size": (["WIDTH_HEIGHT"], "Checkbox and radio box size"),
     "component/progress/height": (["WIDTH_HEIGHT"], "Progress track height"),
 }
-
-
-# ---------------------------------------------------------------- device tier
-def device_table(cfg):
-    """[(path, per-mode px list, primitive prefix, scopes, description)]"""
-    dev, tier = cfg["device"], cfg["tiers"]["component_tokens"]
-    rows = [(f"space/{k}", v, "space", ["GAP"], f"Spacing step {k}") for k, v in dev["space"].items()]
-    rows.append(("layout/margin", dev["margin"], "space", ["GAP", "WIDTH_HEIGHT"], "Page side margin"))
-    rows += [(f"type/size/{k}", t["size"], "font/size", ["FONT_SIZE"], f"Font size: {k}")
-             for k, t in dev["type"].items()]
-    rows += [(f"type/line-height/{k}", t["line"], "font/line-height", ["LINE_HEIGHT"], f"Line height: {k}")
-             for k, t in dev["type"].items()]
-    if tier != "none":
-        rows.append(("size/control", dev["control"], "size", ["WIDTH_HEIGHT"], "Height of interactive controls"))
-        rows.append(("size/icon", dev["icon"], "size", ["WIDTH_HEIGHT"], "Icon size"))
-    return rows
-
-
-def build_device(cfg):
-    dev = cfg["device"]
-    col = Collection(DEVICE, list(dev["modes"]))
-    for path, vals, prefix, scopes, desc in device_table(cfg):
-        col.variables.append(Variable(path, "number", {
-            m: Alias(f"{prefix}/{num(v)}", PRIM) for m, v in zip(dev["modes"], vals)}, scopes, desc))
-    return col
 
 
 # ---------------------------------------------------------------- color rules
@@ -217,97 +194,315 @@ class Deriver:
         return o
 
 
-# ---------------------------------------------------------------- assembly
-def _alias_for(path, prims):
-    return Alias(path, PRIM)
+
+# ---------------------------------------------------------------- planning
+DIM_COLLECTION = {"brand": "Brand", "theme": "Theme", "device": "Device", "platform": "Platform",
+                  "density": "Density", "a11y": "A11y", "locale": "Locale"}
+A11Y_MODES = ["Default", "Large text", "Reduced motion"]
+DIM_WHY = {
+    "brand": "brands differ independently of everything else, so each brand is a mode",
+    "theme": "light and dark change the same roles with different values",
+    "device": "spacing and type scale change with device, independent of brand or theme",
+    "platform": "touch targets and motion follow platform conventions (Apple 44pt, Material 48dp)",
+    "density": "compact, comfortable and spacious change spacing without changing the brand",
+    "a11y": "large text and reduced motion override type, focus and motion tokens",
+    "locale": "script and reading direction change the font family and layout direction",
+}
 
 
-def role_values(cfg, prims, b, kind, deriver, has_device):
-    """Ordered {path: (type, value)} for one mode."""
-    tier = cfg["tiers"]["component_tokens"]
-    out = {}
-    for path, target in deriver.colors(b, kind).items():
-        out[path] = ("color", Alias(target, PRIM))
-    order = list(COLOR_META)
-    out = {p: out[p] for p in order}
+def collection_name(cfg, dim):
+    return DIM_COLLECTION.get(dim, dim)  # a custom dimension is its own name
 
+
+def dim_modes(cfg, dim):
+    dims = cfg["dimensions"]
+    if dim == "brand":
+        return [b["name"] for b in cfg["mode_brands"]] if "brand" in dims else [cfg["brands"][0]["name"]]
+    return {"theme": ["Light", "Dark"], "device": cfg["device"]["modes"], "platform": cfg["platform"]["modes"],
+            "density": cfg["density"]["modes"], "a11y": A11Y_MODES, "locale": cfg["locale"]["modes"]}[dim]
+
+
+@dataclass
+class Tok:
+    path: str
+    type: str
+    dim: str
+    values: dict  # mode -> spec
+    scopes: list
+    desc: str
+
+
+class Planner:
+    """Decides which collection owns each token and how override layers chain.
+
+    A token that several active dimensions vary is built as a chain: the base layer
+    holds absolute values; each override layer aliases the layer below (or overrides
+    it). The top of the chain carries the canonical name components bind to; lower
+    layers are prefixed with their dimension, so names never collide across files.
+    """
+
+    def __init__(self, cfg):
+        self.cfg = cfg
+        self.dims = (set(cfg["dimensions"]) | {"brand"}) - {"context"}  # context adds tokens, no collection
+        self.brands = cfg["mode_brands"]
+        self.toks = []
+        self.color_modes = []  # (label, brand, kind)
+
+    def modes(self, dim):
+        return dim_modes(self.cfg, dim)
+
+    def add(self, dim, path, type_, values, scopes, desc):
+        self.toks.append(Tok(path, type_, dim, values, scopes, desc))
+
+    def chain(self, canon, type_, base_dim, base_values, scopes, desc, overrides=None):
+        dims = [base_dim] + [d for d in (overrides or {}) if d in self.dims]
+        prev = None
+        for i, d in enumerate(dims):
+            path = canon if i == len(dims) - 1 else f"{d}/{canon}"
+            if i == 0:
+                values = base_values
+            else:
+                values = {}
+                for m in self.modes(d):
+                    spec = overrides[d](m)
+                    values[m] = spec if spec is not None else ("ref", prev[0], prev[1])
+            note = "" if i == len(dims) - 1 else f" ({d} layer input; bind {canon})"
+            self.add(d, path, type_, values, scopes, desc + note)
+            prev = (path, d)
+        return dims[-1]  # the dimension that holds the canonical token
+
+
+def plan_tokens(cfg):
+    P = Planner(cfg)
+    dims, brands, tier = P.dims, P.brands, cfg["tiers"]["component_tokens"]
+    dev, plat, den = cfg["device"], cfg["platform"], cfg["density"]
+    a11y, loc, ctx = cfg["a11y"], cfg["locale"], cfg["context"]
+    brand_active, theme_active = "brand" in cfg["dimensions"], "theme" in cfg["dimensions"]
+    bmodes = P.modes("brand")
+
+    # ---- color roles
+    if theme_active and brand_active:
+        for role, (scopes, desc) in COLOR_META.items():
+            for variant in ("light", "dark"):
+                P.add("brand", f"palette/{variant}/{role}", "color",
+                      {b["name"]: ("color", role, b, variant) for b in brands}, scopes,
+                      f"{desc} ({variant} palette input; bind {role})")
+            P.add("theme", role, "color",
+                  {"Light": ("ref", f"palette/light/{role}", "brand"),
+                   "Dark": ("ref", f"palette/dark/{role}", "brand")}, scopes, desc)
+        P.color_modes = [(f"{b['name']} / {t}", b, k) for b in brands
+                         for t, k in (("Light", "light"), ("Dark", "dark"))]
+    elif theme_active:
+        b0 = brands[0]
+        for role, (scopes, desc) in COLOR_META.items():
+            P.add("theme", role, "color", {"Light": ("color", role, b0, "light"),
+                                           "Dark": ("color", role, b0, "dark")}, scopes, desc)
+        P.color_modes = [("Light", b0, "light"), ("Dark", b0, "dark")]
+    else:
+        for role, (scopes, desc) in COLOR_META.items():
+            P.add("brand", role, "color", {b["name"]: ("color", role, b, "light") for b in brands}, scopes, desc)
+        P.color_modes = [(b["name"], b, "light") for b in brands]
+
+    # ---- shape, weights, easing (brand-owned)
     for role in ("button", "field", "card", "control"):
         if role == "control" and tier == "none":
             continue
-        out[f"radius/{role}"] = ("number", Alias(f"radius/{radius_key(b['radius'][role], cfg)}", PRIM))
+        P.add("brand", f"radius/{role}", "number",
+              {b["name"]: ("prim", "radius", b["radius"][role]) for b in brands}, *NUM_META[f"radius/{role}"])
     if tier != "none":
-        out["radius/round"] = ("number", Alias("radius/full", PRIM))
-    out["border-width/default"] = ("number", Alias(f"border/{num(b['border']['default'])}", PRIM))
-    out["border-width/focus"] = ("number", Alias(f"border/{num(b['border']['focus'])}", PRIM))
+        P.add("brand", "radius/round", "number", {m: ("prim", "radius", "full") for m in bmodes},
+              *NUM_META["radius/round"])
+    P.add("brand", "border-width/default", "number",
+          {b["name"]: ("prim", "border", b["border"]["default"]) for b in brands}, *NUM_META["border-width/default"])
+    P.chain("border-width/focus", "number", "brand",
+            {b["name"]: ("prim", "border", b["border"]["focus"]) for b in brands}, *NUM_META["border-width/focus"],
+            overrides={"a11y": lambda m: ("prim", "border", a11y["large_focus_width"]) if m == "Large text" else None})
+    for role in ("heading", "body"):
+        P.add("brand", f"type/weight/{role}", "number",
+              {b["name"]: ("prim", "weight", b["weights"][role]) for b in brands}, *NUM_META[f"type/weight/{role}"])
+        P.chain(f"type/family/{role}", "string", "brand",
+                {b["name"]: ("prim", "family", b["fonts"][role]) for b in brands}, *NUM_META[f"type/family/{role}"],
+                overrides={"locale": lambda m: ("prim", "family", loc["families"][m]) if m in loc["families"] else None})
+    P.add("brand", "easing/standard", "easing", {b["name"]: ("lit", list(b["easing"])) for b in brands},
+          *NUM_META["easing/standard"])
 
-    dev = cfg["device"]
-    section_key, stack_key = ("2xl", "lg") if b["density"] == "roomy" else ("xl", "md")
-    if has_device:
-        out["space/section"] = ("number", Alias(f"space/{section_key}", DEVICE))
-        out["space/stack"] = ("number", Alias(f"space/{stack_key}", DEVICE))
+    # ---- scale-like tokens: device is the base when active, else the brand collection
+    scale_dim = "device" if "device" in dims else "brand"
+
+    def base_values(dim, vals, kind):
+        names = P.modes(dim)
+        if dim == "brand":
+            return {m: ("prim", kind, vals[0]) for m in names}
+        return {m: ("prim", kind, v) for m, v in zip(names, vals)}
+
+    for k, vals in dev["space"].items():
+        P.chain(f"space/{k}", "number", scale_dim, base_values(scale_dim, vals, "space"), ["GAP"], f"Spacing step {k}")
+    P.chain("layout/margin", "number", scale_dim, base_values(scale_dim, dev["margin"], "space"),
+            ["GAP", "WIDTH_HEIGHT"], "Page side margin")
+
+    # ---- rhythm: density owns it when active, else the brand layer (roomy brands use larger steps)
+    if "density" in dims:
+        for key in ("section", "stack", "inset"):
+            P.add("density", f"space/{key}", "number",
+                  {m: ("prim", "space", v) for m, v in zip(den["modes"], den[key])},
+                  *(NUM_META.get(f"space/{key}") or (["GAP"], "Padding inside containers")))
     else:
-        out["space/section"] = ("number", Alias(f"space/{num(dev['space'][section_key][0])}", PRIM))
-        out["space/stack"] = ("number", Alias(f"space/{num(dev['space'][stack_key][0])}", PRIM))
-    out["type/weight/heading"] = ("number", Alias(f"font/weight/{num(b['weights']['heading'])}", PRIM))
-    out["type/weight/body"] = ("number", Alias(f"font/weight/{num(b['weights']['body'])}", PRIM))
-    out["type/family/heading"] = ("string", Alias(f"font/family/{slugify(b['fonts']['heading'])}", PRIM))
-    out["type/family/body"] = ("string", Alias(f"font/family/{slugify(b['fonts']['body'])}", PRIM))
-    out["easing/standard"] = ("easing", list(b["easing"]))
+        for key, (std, roomy) in (("section", ("xl", "2xl")), ("stack", ("md", "lg"))):
+            base = {}
+            for b in brands:
+                k = roomy if b["density"] == "roomy" else std
+                base[b["name"]] = (("ref", f"space/{k}", "device") if "device" in dims
+                                   else ("prim", "space", dev["space"][k][0]))
+            P.add("brand", f"space/{key}", "number", base, *NUM_META[f"space/{key}"])
 
-    if not has_device:  # no device dimension: device-level tokens live in this collection
-        for path, vals, prefix, _scopes, _desc in device_table(cfg):
-            out[path] = ("number", Alias(f"{prefix}/{num(vals[0])}", PRIM))
+    # ---- type scale, with a11y enlarging sizes that are the same in every lower mode
+    def scaled(vals, kind):
+        uniform = len(set(vals)) == 1
+        return lambda m: (("prim", kind, round(vals[0] * a11y["large_text_scale"]))
+                          if m == "Large text" and uniform else None)
+
+    for k, t in dev["type"].items():
+        P.chain(f"type/size/{k}", "number", scale_dim, base_values(scale_dim, t["size"], "font_size"),
+                ["FONT_SIZE"], f"Font size: {k}", overrides={"a11y": scaled(t["size"], "font_size")})
+        P.chain(f"type/line-height/{k}", "number", scale_dim, base_values(scale_dim, t["line"], "line"),
+                ["LINE_HEIGHT"], f"Line height: {k}", overrides={"a11y": scaled(t["line"], "line")})
+    if "context" in cfg["dimensions"]:
+        for k, t in ctx["marketing_type"].items():
+            P.chain(f"type/size/marketing-{k}", "number", scale_dim, base_values(scale_dim, t["size"], "font_size"),
+                    ["FONT_SIZE"], f"Marketing font size: {k}")
+            P.chain(f"type/line-height/marketing-{k}", "number", scale_dim,
+                    base_values(scale_dim, t["line"], "line"), ["LINE_HEIGHT"], f"Marketing line height: {k}")
+
+    # ---- control and icon size: platform, else device, else brand
+    size_dim = "platform" if "platform" in dims else scale_dim
+    size_vals = (plat["control"], plat["icon"]) if size_dim == "platform" else (dev["control"], dev["icon"])
+    control_dim = icon_dim = None
+    if tier != "none":
+        control_dim = P.chain("size/control", "number", size_dim, base_values(size_dim, size_vals[0], "size"),
+                              ["WIDTH_HEIGHT"], "Height of interactive controls")
+        icon_dim = P.chain("size/icon", "number", size_dim, base_values(size_dim, size_vals[1], "size"),
+                           ["WIDTH_HEIGHT"], "Icon size")
+
+    # ---- motion durations: platform else brand base; reduced motion on top
+    mot_dim = "platform" if "platform" in dims else "brand"
+    for k in ("short", "medium", "long"):
+        vals = plat["duration"][k] if mot_dim == "platform" else [cfg["motion"]["duration"][k]]
+        P.chain(f"duration/{k}", "number", mot_dim, base_values(mot_dim, vals, "duration"), ["ALL_SCOPES"],
+                f"Motion duration ({k}), ms",
+                overrides={"a11y": lambda m: ("prim", "duration", 0) if m == "Reduced motion" else None})
+
+    if "locale" in dims:
+        P.add("locale", "layout/direction", "string",
+              {m: ("lit", loc["direction"].get(m, "ltr")) for m in P.modes("locale")}, ["ALL_SCOPES"],
+              "Reading direction (ltr or rtl)")
+
     if tier == "full":
-        src = DEVICE if has_device else PRIM
-        ctrl = "size/control" if has_device else f"size/{num(dev['control'][0])}"
-        icon = "size/icon" if has_device else f"size/{num(dev['icon'][0])}"
-        out["component/button/height"] = ("number", Alias(ctrl, src))
-        out["component/field/height"] = ("number", Alias(ctrl, src))
-        out["component/checkbox/size"] = ("number", Alias(icon, src))
-        sp = "space/xs" if has_device else f"space/{num(dev['space']['xs'][0])}"
-        out["component/progress/height"] = ("number", Alias(sp, src))
+        top = {"size/control": control_dim, "size/icon": icon_dim, "space/xs": scale_dim}
+        for path, target in (("component/button/height", "size/control"), ("component/field/height", "size/control"),
+                             ("component/checkbox/size", "size/icon"), ("component/progress/height", "space/xs")):
+            P.add("brand", path, "number", {m: ("ref", target, top[target]) for m in bmodes}, *NUM_META[path])
+    return P
+
+
+def requirements(P):
+    """Primitive values the plan needs, by kind."""
+    need = {}
+    for t in P.toks:
+        for spec in t.values.values():
+            if spec[0] == "prim":
+                if spec[1] == "family":
+                    need.setdefault("family", {})[slugify(spec[2])] = spec[2]
+                else:
+                    need.setdefault(spec[1], set()).add(spec[2])
+    return need
+
+
+# ---------------------------------------------------------------- assembly
+def build_collections(cfg, prims, P):
+    """Materialise the plan. Returns (collections in dependency order, derived color roles).
+
+    derived maps a color-mode label to {role: primitive path}; the checks and the brief use it.
+    """
+    deriver = Deriver(prims, cfg)
+    derived = {label: deriver.colors(b, kind) for label, b, kind in P.color_modes}
+    cache = {}
+
+    def roles(b, kind):
+        key = (b["slug"], kind)
+        if key not in cache:
+            cache[key] = deriver.colors(b, kind)
+        return cache[key]
+
+    cols = {dim: Collection(collection_name(cfg, dim), list(P.modes(dim))) for dim in P.dims}
+
+    def value(spec):
+        kind = spec[0]
+        if kind == "prim":
+            return Alias(prim_path(spec[1], spec[2]), PRIM)
+        if kind == "ref":
+            return Alias(spec[1], collection_name(cfg, spec[2]))
+        if kind == "lit":
+            return spec[1]
+        return Alias(roles(spec[2], spec[3])[spec[1]], PRIM)  # ("color", role, brand, kind)
+
+    for t in P.toks:
+        cols[t.dim].variables.append(Variable(t.path, t.type, {m: value(s) for m, s in t.values.items()},
+                                              t.scopes, t.desc))
+    out = [c for c in cols.values() if c.variables] + build_custom(cfg, prims)
+    cols["brand"].notes = deriver.notes
+    return order_by_dependency(out), derived
+
+
+def build_custom(cfg, prims):
+    """User-defined dimensions: tokens alias primitive paths (or are string/boolean literals)."""
+    out = []
+    for c in cfg["custom_dimensions"] or []:
+        col = Collection(c["name"], list(c["modes"]))
+        for path, spec in c["tokens"].items():
+            validate_path(path)
+            vtype = spec.get("type", "number")
+            vals = spec["values"]
+            if set(vals) != set(c["modes"]):
+                raise ValueError(f"custom {c['name']}:{path} needs a value for each mode {c['modes']}")
+            resolved = {}
+            for m, v in vals.items():
+                if vtype in ("string", "boolean") and not (isinstance(v, str) and v in prims.values):
+                    resolved[m] = v
+                else:
+                    if v not in prims.values:
+                        raise ValueError(f"custom {c['name']}:{path}:{m}: {v!r} is not a primitive; "
+                                         "use a primitive path such as space/16 or color/white")
+                    resolved[m] = Alias(v, PRIM)
+            col.variables.append(Variable(path, vtype, resolved, spec.get("scopes", ["ALL_SCOPES"]),
+                                          spec.get("description", f"{c['name']} token")))
+        out.append(col)
     return out
 
 
-def meta_for(path, cfg):
-    if path in COLOR_META:
-        return COLOR_META[path]
-    if path in NUM_META:
-        return NUM_META[path]
-    for p, vals, _prefix, scopes, desc in device_table(cfg):
-        if p == path:
-            return scopes, desc
-    raise KeyError(path)
+def order_by_dependency(cols):
+    """Primitives are not in `cols`; a collection comes after every collection it aliases."""
+    byname = {c.name: c for c in cols}
+    deps = {c.name: {v.collection for var in c.variables for v in var.values.values()
+                     if isinstance(v, Alias) and v.collection not in (c.name, PRIM)} for c in cols}
+    ordered, seen = [], set()
 
+    def visit(name, stack=()):
+        if name in seen:
+            return
+        if name in stack:
+            raise ValueError(f"circular collection dependency at {name}")
+        for d in sorted(deps.get(name, ())):
+            if d in byname:
+                visit(d, stack + (name,))
+        seen.add(name)
+        ordered.append(byname[name])
 
-def build_semantic(cfg, prims):
-    """Return (collections, mode_info). collections = [Device?, Brand|Theme]."""
-    dims = cfg["dimensions"]
-    has_device = "device" in dims
-    deriver = Deriver(prims, cfg)
-    if "theme" in dims:
-        name = "Theme"
-        modes = [("Light", cfg["brands"][0], "light"), ("Dark", cfg["brands"][0], "dark")]
-    else:
-        name = "Brand"
-        modes = [(b["name"], b, "light") for b in cfg["mode_brands"]]
-    col = Collection(name, [m[0] for m in modes])
-    per_mode = {m: role_values(cfg, prims, b, kind, deriver, has_device) for m, b, kind in modes}
-    first = per_mode[modes[0][0]]
-    for path, (vtype, _v) in first.items():
-        scopes, desc = meta_for(path, cfg)
-        col.variables.append(Variable(path, vtype, {m: per_mode[m][path][1] for m, _, _ in modes},
-                                      scopes, desc))
-    col.notes = deriver.notes
-    cols = ([build_device(cfg)] if has_device else []) + [col]
-    return cols
+    for name in sorted(byname):
+        visit(name)
+    return ordered
 
 
 # ---------------------------------------------------------------- contrast matrix
-def _resolve(prims, value):
-    return prims.values[value.target]
-
-
 TEXT_PAIRS = [
     ("color/text/primary", "color/surface/page"), ("color/text/primary", "color/surface/card"),
     ("color/text/secondary", "color/surface/page"), ("color/text/secondary", "color/surface/card"),
@@ -326,20 +521,18 @@ EXEMPT = ["color/text/disabled", "color/border/subtle", "color/surface/track",
           "color/surface/disabled"]
 
 
-def check_semantic(cfg, prims, color_collection):
+def check_semantic(cfg, prims, derived):
     targets = cfg["color"]["contrast"]
-    pairs = list(TEXT_PAIRS), list(UI_PAIRS)
-    text_pairs, ui_pairs = pairs
+    text_pairs, ui_pairs = list(TEXT_PAIRS), list(UI_PAIRS)
     for role in STATUS_ROLES:
         text_pairs += [(f"color/text/{role}", "color/surface/card"),
                        (f"color/text/{role}", f"color/surface/{role}")]
         ui_pairs.append((f"color/border/{role}", "color/surface/card"))
     results = []
-    for mode in color_collection.modes:
+    for label, roles in derived.items():
         for kind, plist in (("text", text_pairs), ("ui", ui_pairs)):
             for fg, bg in plist:
-                f = _resolve(prims, color_collection.get(fg).values[mode])
-                g = _resolve(prims, color_collection.get(bg).values[mode])
-                results.append(check_pair(f"{fg} on {bg}", mode, kind, f, g, targets))
+                results.append(check_pair(f"{fg} on {bg}", label, kind, prims.values[roles[fg]],
+                                          prims.values[roles[bg]], targets))
     notes = [f"exempt from contrast requirements (disabled or decorative): {', '.join(EXEMPT)}"]
     return results, notes

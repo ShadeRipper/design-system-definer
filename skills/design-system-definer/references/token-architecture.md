@@ -27,6 +27,12 @@ Motion: `easing/standard` (literal cubic bezier).
 
 Component-token tier (`tiers.component_tokens`): `none` drops `radius/control`, `radius/round`, `size/control`, `size/icon`; `minimal` (default) keeps them; `full` adds `component/{button,field}/height`, `component/checkbox/size`, `component/progress/height`.
 
+## Layers
+
+When several dimensions vary one token it is a chain of layers: the base holds absolute values, override layers alias the one below, and the top carries the canonical name. Lower layers are prefixed with their dimension (`device/...`, `brand/...`, `platform/...`, `a11y/...`, `palette/{light,dark}/...`). Bind only to canonical names. See [system-types.md](system-types.md#layering-how-two-dimensions-vary-the-same-token).
+
+Extra tokens by dimension: `size/control`, `size/icon`, `duration/{short,medium,long}` (platform), `space/inset` (density), `layout/direction` (locale), `type/size/marketing-*` (context).
+
 ## Deriving collections
 
 One collection per independent dimension; modes are the values of that dimension. Brands are never separate collections. See [system-types.md](system-types.md).
