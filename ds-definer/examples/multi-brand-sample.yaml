@@ -1,0 +1,17 @@
+# Sample brand colors for regression tests; not authoritative brand specs.
+preset: multi-brand-white-label
+base_mode: include
+brands:
+  - name: "Lay's"
+    essence: [cheerful, playful, snackable]
+    never: corporate
+    anchors: { primary: "#FFC72C", accent: "#D52B1E" }
+    fonts: { heading: Nunito, body: Nunito }
+  - name: Pepsi
+    anchors: { primary: "#004B93", accent: "#E32934" }
+    fonts: { heading: Inter, body: Inter }
+  - name: Starbucks
+    anchors: { primary: "#00704A" }
+    fonts: { heading: Lato, body: Lato }
+color:
+  contrast: AA

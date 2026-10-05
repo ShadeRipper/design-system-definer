@@ -1,0 +1,3 @@
+system_type: multi-brand
+base_mode: ask
+dimensions: [brand, device]
