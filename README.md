@@ -1,32 +1,65 @@
 # Design System Definer
 
-A Claude skill that turns a designer's brand thinking into an accessible, build-ready token foundation and a Figma build plan. Stage 1 of the workflow only: Figma builds the system, Claude Design imports the `.fig` file.
+A Claude skill that turns a designer's brand thinking into an accessible, build-ready token foundation and a Figma build plan. It covers stage 1 only (define); Figma builds the system and Claude Design imports the `.fig` file.
 
-Full spec: [docs/PRD.md](docs/PRD.md).
+It interviews you one question at a time, plays back a decision brief for sign-off, then generates contrast-checked primitives and semantic tokens, Figma build scripts, a phased build plan and DTCG tokens. Spec: [docs/PRD.md](docs/PRD.md).
 
-## Status: build phase 1 (scripts and tests)
+## Install
 
-| Piece | State |
-| --- | --- |
-| OKLCH ramps calibrated to a contrast target (R3) | done, tested across a hue sweep and AA / AAA / custom |
-| Contrast matrix with suggested fixes (R5) | done for primitives; semantic pairs arrive with `semantic.py` |
-| Figma native variable JSON for primitives (R6) | written, **not yet validated** against a real Figma export fixture |
-| DTCG export (P1) | done for primitives |
-| Config + presets, deterministic reruns (R8) | done; 3 presets |
-| Interview, `SKILL.md`, semantic tokens, build plan | later phases |
+**Claude Code, as a plugin** (recommended; updates with the repo):
 
-## Use
-
-```bash
-pip install -r requirements.txt
-python ds-definer/scripts/build.py ds-definer/examples/multi-brand-sample.yaml --out out
-python -m unittest discover -s ds-definer/tests -v
+```
+/plugin marketplace add ShadeRipper/design-system-definer
+/plugin install design-system-definer@design-system-definer
 ```
 
-`build.py` exits 1 if any contrast pair fails. Output depends only on the config.
+**Claude Code, personal skill** (copies the folder to `~/.claude/skills`):
+
+```bash
+git clone https://github.com/ShadeRipper/design-system-definer && cd design-system-definer
+sh install.sh            # macOS, Linux, Git Bash
+./install.ps1            # Windows PowerShell
+```
+
+**claude.ai and Claude Desktop:** upload `dist/design-system-definer.skill` (Settings, Capabilities, Skills). Rebuild it with `python tools/package.py`.
+
+Then ask: *"Help me define a design system."* Python 3.8+ is the only requirement; PyYAML is bundled.
+
+## Use without Claude
+
+```bash
+cd skills/design-system-definer
+python scripts/build.py examples/multi-brand-sample.yaml                 # playback: prints the decision brief, writes nothing
+python scripts/build.py examples/multi-brand-sample.yaml --approve --out ds-out
+```
+
+`--approve` is the sign-off gate. A failing contrast pair blocks export (exit 1). Output depends only on the config.
+
+## What it generates
+
+| Output | Notes |
+| --- | --- |
+| `decision-brief.md`, `ds.config.yaml` | the signed-off decisions and the config to rerun |
+| `contrast-matrix.md/.csv` | every text and UI pair in every mode, with suggested fixes |
+| `figma-build/*.js` | `use_figma` scripts: Primitives, Device, Brand (or Theme), text styles. Verified path |
+| `figma/*.tokens.json` | native variable JSON, one file per collection and mode. **Not yet validated** against a real Figma export |
+| `dtcg/` | DTCG tokens per mode plus a Style Dictionary config |
+| `build-plan.md` | phases with human checkpoints for `figma-generate-library` |
+| `decision-records/` | one record per key decision |
 
 ## Rules worth knowing
 
-- **Contrast wins over anchor fidelity.** The exact anchor hex is always kept as `color/<brand>/<role>/anchor`. It also replaces its nearest ramp step, but only if that step still meets its requirement. Otherwise the ramp is calibrated and the anchor is flagged with a safe text pairing.
-- **Contrast target is selectable:** `AA` (text 4.5, UI 3.0), `AAA` (7 / 4.5) or custom `{text, ui}`.
-- **Names** are lowercase slash paths; spaces and brackets are rejected.
+- **Contrast wins over anchor fidelity.** The exact brand hex is always kept as a token; it lands on a ramp step only if that step still passes. Otherwise the ramp is calibrated and the anchor is flagged with the text color that works on it.
+- **Contrast target is selectable:** `AA` (4.5 / 3), `AAA` (7 / 4.5) or custom ratios.
+- **Brands are modes, never collections.** Semantic tokens are aliases only.
+- **Indicator versus action split:** the fill can be light, but focus rings and selection marks use a darker step that meets 3:1.
+
+## Status (v0.1)
+
+Generated and tested: primitives, device and brand/theme collections, contrast matrix, Figma build scripts, build plan, decision brief and records, DTCG. 49 tests; the multi-brand sample reproduces the structure of the real Multi-Brand DS Figma file (same collections, modes and variable names) with 0 failing pairs.
+
+Supported dimensions: `brand`, `theme`, `device`. Not yet: brand plus theme together, platform, density, a11y and locale dimensions.
+
+```bash
+python -m unittest discover -s tests -v
+```

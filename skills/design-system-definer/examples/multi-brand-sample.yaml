@@ -1,0 +1,34 @@
+# Reproduces the Multi-Brand DS Figma file (Base + Lay's, Pepsi, Starbucks).
+# Brand hex values are samples for regression tests, not authoritative brand specs.
+preset: multi-brand-white-label
+base_mode: include
+brands:
+  - name: "Lay's"
+    slug: lays
+    essence: [cheerful, playful, snackable]
+    never: corporate
+    anchors: { yellow: "#FFC72C", red: "#D52B1E" }
+    primary: yellow
+    neutral: warm
+    fonts: { heading: Nunito, body: Nunito }
+    weights: { heading: 800, body: 500 }
+    radius: { button: 12, field: 16, card: 16, control: 8 }
+    border: { default: 2, focus: 3 }
+  - name: Pepsi
+    slug: pepsi
+    anchors: { blue: "#004B93" }
+    neutral: cool
+    fonts: { heading: Archivo, body: Archivo }
+    weights: { heading: 800, body: 400 }
+    radius: { button: full, field: 12, card: 12, control: 4 }
+  - name: Starbucks
+    slug: sbux
+    anchors: { green: "#00704A" }
+    neutral: warm
+    fonts: { heading: Lora, body: Figtree }
+    weights: { heading: 500, body: 400 }
+    radius: { button: full, field: 8, card: 8, control: 4 }
+    density: roomy
+    easing: [0.793, 0.009, 0.379, 0.991]
+color:
+  contrast: AA

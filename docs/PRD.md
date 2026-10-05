@@ -220,32 +220,22 @@ Nine P0 requirements make v1; each has a test Claude Code can run.
 A lean `SKILL.md` runs the interview and routes to references and scripts only when a stage needs them.
 
 ```
-ds-definer/
-├─ SKILL.md                    workflow, interview stages, sign-off rule, routing
-├─ references/
-│   ├─ interview.md            questions, why-lines, follow-ups for vague answers
-│   ├─ levers.md               essence-to-lever library, evidence ladder
-│   ├─ system-types.md         type catalog, dimensions per type, base-mode guidance
-│   ├─ token-architecture.md   tiers, deriving collections, naming conventions
-│   ├─ accessibility.md        contrast rules, indicator vs action split, targets
-│   └─ figma-gotchas.md        known Figma API and import pitfalls
-├─ presets/
-│   ├─ single-brand-light-dark.yaml
-│   ├─ multi-brand-white-label.yaml
-│   └─ marketing-site.yaml
-├─ scripts/
-│   ├─ ramps.py                OKLCH ramps calibrated to target contrast
-│   ├─ semantic.py             semantic and device tokens per mode
-│   ├─ contrast.py             contrast matrix and suggested fixes
-│   ├─ export_figma.py         Figma native variable JSON
-│   ├─ export_dtcg.py          DTCG JSON and Style Dictionary config
-│   └─ build_plan.py           phased plan for figma-generate-library
-├─ templates/
-│   ├─ decision-brief.md
-│   └─ decision-record.md
-└─ tests/
-    ├─ fixtures/figma-export-sample.json
-    └─ cases/                  briefs from this project as regression tests
+design-system-definer/                 repo = Claude Code plugin + marketplace
+├─ .claude-plugin/                     plugin.json, marketplace.json
+├─ skills/design-system-definer/       the skill (also what install scripts copy)
+│   ├─ SKILL.md                        workflow, interview stages, sign-off rule
+│   ├─ references/                     interview, levers, system-types, token-architecture,
+│   │                                  accessibility, figma-gotchas, config-reference
+│   ├─ presets/                        single-brand-light-dark, multi-brand-white-label, marketing-site
+│   ├─ scripts/                        color, ramps, primitives, semantic, contrast, config, model,
+│   │                                  export_figma (native JSON + use_figma scripts), export_dtcg,
+│   │                                  build_plan, brief, levers, build (CLI), _vendor/yaml
+│   ├─ templates/                      decision-brief.md, decision-record.md
+│   └─ examples/                       multi-brand-sample.yaml (regression case)
+├─ tests/                              unittest suite + fixtures/multi-brand-ds.reference.json
+├─ tools/package.py                    builds dist/design-system-definer.skill
+├─ install.sh, install.ps1             copy the skill into ~/.claude/skills
+└─ docs/PRD.md
 ```
 
 **Notes for Claude Code**
@@ -280,7 +270,7 @@ ds-definer/
 **Open questions**
 
 - [x] Claude Design and the `.fig` file: assumed to carry modes, descriptions and text-style bindings. **Fallback if not:** read the variables directly from the Figma file through the Figma MCP, write them to an export folder, and add that folder to Claude Design. Verify once with this project's file; it no longer blocks R6.
-- [ ] Does Figma's native JSON import keep cross-collection aliases? If not, semantic tokens go in through the fallback build script. (Owner: Claude Code, in phase 1)
+- [ ] Does Figma's native JSON import keep cross-collection aliases? If not, semantic tokens go in through the `use_figma` build scripts, which create the aliases and were exercised in a scratch file. Native JSON stays unvalidated until a real Figma export is added as a fixture.
 - [x] Component-level tokens default to `minimal` (decided). Missing control-height, radius and track tokens were a main cause of rework.
 - [x] Base mode is a per-system choice (`base_mode: include | none | ask`), driven by system type; see System types.
 

@@ -1,0 +1,14 @@
+{
+  "name": "design-system-definer",
+  "owner": {
+    "name": "Gaurav Sharma"
+  },
+  "plugins": [
+    {
+      "name": "design-system-definer",
+      "source": "./",
+      "description": "Guided design-system definition: interview, decision brief, contrast-calibrated tokens, Figma build scripts."
+    }
+  ],
+  "description": "Design System Definer: guided design-system definition for Claude Code."
+}

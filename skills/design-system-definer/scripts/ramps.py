@@ -29,7 +29,7 @@ class Ramp:
 
 def _taper(L, l_dark, l_light):
     t = max(0.0, min(1.0, (L - l_dark) / (l_light - l_dark)))
-    return 0.35 + 0.65 * 4 * t * (1 - t)
+    return 0.2 + 0.8 * 4 * t * (1 - t)
 
 
 def _solve_lightness(target, hue, chroma, l_dark, l_light):

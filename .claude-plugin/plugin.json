@@ -1,0 +1,8 @@
+{
+  "name": "design-system-definer",
+  "description": "Define a design system before building it: discovery interview, decision brief, contrast-checked tokens, Figma build scripts and a build plan.",
+  "version": "0.1.0",
+  "author": { "name": "Gaurav Sharma" },
+  "repository": "https://github.com/ShadeRipper/design-system-definer",
+  "keywords": ["design-system", "design-tokens", "figma", "wcag", "oklch"]
+}
