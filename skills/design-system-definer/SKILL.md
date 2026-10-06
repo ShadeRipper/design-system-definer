@@ -56,7 +56,7 @@ Always: `decision-brief.md`, `ds.config.yaml`, `contrast-matrix.md/.csv`, primit
 
 Built-in dimensions: `brand`, `theme`, `device`, `platform`, `density`, `a11y`, `context`, `locale`; they combine freely (brand with theme layers palettes under a theme). Anything else goes in `custom_dimensions` ([system types](references/system-types.md)). Not generated: per-script line height, and anything that needs math between modes (Figma variables have none). Say so when it matters and record it in the brief.
 
-Native Figma variable JSON (`figma/`) is best-effort until validated against a real export; the `figma-build/` scripts are the verified path.
+Native Figma variable JSON (`figma/`) is best-effort until validated against a real export; the `figma-build/` scripts are the verified path (run end to end on a real file for a single brand with device, platform and context). Components are out of scope: hand off to `figma-generate-library`.
 
 ## References
 

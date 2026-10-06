@@ -86,6 +86,16 @@ Paste the link to the Figma file you want. Claude uses the Figma connector to ru
 2. **Text styles**, bound to the variables. *Checkpoint.*
 3. **Components** one at a time (button, text field, and so on) using Figma's `figma-generate-library` skill. *Checkpoint after each.*
 
+### 5b. Already have screens? Bind them to the tokens
+Add `bind` to `outputs:` in the config. The build then writes `figma-bind/`: scripts that attach your existing layers to the new text styles, colour variables, radius and spacing, rename default-named layers and add auto-layout where it is safe.
+
+1. Save a named version in Figma first.
+2. **Dry run** (the scripts default to it) and read the counts.
+3. **Pilot one frame**, compare screenshots before and after.
+4. Apply in batches, then run the read-only audit for measured coverage.
+
+What it leaves alone, on purpose, is listed in [bind-existing-designs.md](../skills/design-system-definer/references/bind-existing-designs.md). Changing the config later? Rebuild with `--previous <old build folder>` and run only `figma-build-delta/`.
+
 ### 6. Hand off
 Download the `.fig` file and import it into Claude Design, or give developers the `dtcg/` folder.
 
@@ -95,7 +105,7 @@ Download the `.fig` file and import it into Claude Design, or give developers th
 
 - **New or empty file (best):** everything is created from scratch.
 - **File that already has variables:** the scripts match collections and variables **by name**. Same name means the value is updated; a new name means it is created. **Nothing is ever deleted**, so renamed tokens leave the old ones behind for you to remove.
-- **Your own colour and font choices:** all come from your answers, not from the file. The skill does **not** read an existing design system to infer one. (Auditing an existing file is planned, not built.)
+- **Your own colour and font choices:** all come from your answers, not from the file. The interview does not infer a system from a file, but it can **read** one: for an existing file it runs a read-only inventory of the fonts, sizes, colours, radii and spacing in use and starts from that evidence. Nothing in the file changes until you approve and run the bind scripts.
 - **Fonts:** the text-style script reports any font family that isn't available in the file so you can install or substitute it.
 
 ## Common questions

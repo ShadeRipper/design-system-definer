@@ -1,6 +1,6 @@
 # What the Design System Definer can and can't do
 
-Read this to know exactly what you are getting. Version 0.8.0.
+Read this to know exactly what you are getting. Version 1.0.0.
 
 **In one line:** it guides you through defining a design system, then generates accessible design tokens and the scripts that build them in Figma. It defines and builds the *foundation* (variables, modes, text styles). It does not design components or screens.
 
@@ -8,13 +8,13 @@ Read this to know exactly what you are getting. Version 0.8.0.
 
 | Area | Status |
 | --- | --- |
-| Guided interview and decision brief with sign-off | Built. The interview flow is instructions for Claude, and it is still being tested in live sessions |
+| Guided interview and decision brief with sign-off | Built. Run end to end, in guided mode, on a real product-and-website design. The flow is instructions for Claude, so wording varies between sessions |
 | Colour ramps with guaranteed contrast | Built and tested |
 | Semantic tokens (roles like text, surface, action) | Built and tested |
 | Eight built-in dimensions plus custom ones | Built and tested |
-| Figma variables, modes and text styles via script | Built. Script mechanics verified in a Figma file; the full generated scripts for every system shape are not yet run end to end |
+| Figma variables, modes and text styles via script | Built. The generated scripts for a single brand with device, platform and context dimensions ran end to end on a real file with no errors and a checksum match. Other shapes (multi-brand, theme, density, locale) have passing tests and hand-checked mechanics but no end-to-end run yet |
 | Figma native variable JSON import | Written, **not validated** against a real Figma export |
-| Code tokens (DTCG, Style Dictionary) | Built and tested; the Style Dictionary build itself has not been run |
+| Code tokens (DTCG, Style Dictionary) | Built and tested. A real build with Style Dictionary 5.6 produced 253 CSS custom properties with every alias resolved |
 | Binding an existing design's layers to the tokens | Built (opt-in `bind` output). Run on a real 20,000-layer file: styles, colours, radius, spacing, names, verified auto-layout |
 | Delta builds (only what changed) | Built |
 | Audit and inventory of an existing file (read-only) | Built; run on a real file |
@@ -78,7 +78,7 @@ Building in Figma needs the Figma connector and edit access to a Figma Design fi
 - **Not generated:** shadows and elevation, gradients, opacity tokens, grids, icons, illustrations.
 - **Fonts:** names only. The skill never ships or installs font files; the Figma file needs the fonts, or you substitute.
 - **Mode counts:** Figma limits the number of modes per collection by plan. A system with many brands may need a higher plan.
-- **Existing systems:** it can't audit or infer a system from an existing Figma file. It builds from your answers.
+- **Existing systems:** it does not infer a system from a file; it builds from your answers. For a file that already has screens it can inventory what is used, bind layers to the new tokens and audit the result. Layers inside instances of another library's components, text that needs uppercase or underline, and large regular-weight headings (until you add regular-weight styles) are left alone and reported.
 
 ## Not in scope
 
@@ -89,9 +89,16 @@ Building components or screens (use Figma's `figma-generate-library` and `figma-
 | | |
 | --- | --- |
 | Verified by 95 automated tests | ramps, contrast across hundreds of colours at AA, AAA and custom, every dimension alone and all together, layering, ordering of collections, determinism, the sign-off gate, install packaging |
-| Verified by hand | the script mechanics in a real Figma file: cross-collection aliases, modes, scopes, text styles bound to variables. Output structure matches a real multi-brand Figma system |
-| Not yet verified | the full generated scripts for every shape in Figma; native JSON import; the interview across many real conversations; a Style Dictionary build |
+| Verified on a real file | the single-brand build (167 primitives, 27 device, 54 brand, 5 platform variables, 17 text styles) created with no errors and a checksum match; the colour, radius, spacing, naming and auto-layout binding passes on about 20,000 layers, with before and after screenshots compared pixel by pixel; a Style Dictionary 5.6 build |
+| Verified by hand | the script mechanics in a real multi-brand Figma file: cross-collection aliases, modes, scopes. Output structure matches a real multi-brand Figma system |
+| Not yet verified | the full generated scripts for multi-brand, theme, density and locale shapes in Figma; native JSON import; the interview across many different users and conversations |
 
 ## Versioning
 
-Semantic versioning, still below 1.0, so details can change between minor versions. See [CHANGELOG.md](../CHANGELOG.md).
+Semantic versioning. From 1.0:
+
+- **Stable within 1.x:** the config keys documented in `config-reference.md`, token and variable names, output folder and file names, exit codes, and the sign-off gate (nothing is written without `--approve`).
+- **May change in a minor release:** the binding heuristics and their tolerances, preset contents, the native JSON format, and the wording of generated documents.
+- A breaking change to the stable list needs a 2.0.
+
+See [CHANGELOG.md](../CHANGELOG.md).

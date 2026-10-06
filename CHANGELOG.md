@@ -2,6 +2,14 @@
 
 Versions follow [semantic versioning](https://semver.org). Below 1.0, a minor bump (0.x) adds capability and may change details; a patch bump (0.x.y) is fixes only.
 
+## 1.0.0
+
+First stable release. Stable means the config keys, token names, output file names, exit codes and the sign-off gate will not break within 1.x (see `docs/CAPABILITIES.md`).
+
+- Validated on a real file: the single-brand build created in Figma with no errors and a checksum match, about 20,000 layers bound with before and after screenshots compared, and the DTCG output built with Style Dictionary 5.6 (253 CSS custom properties, every alias resolved).
+- Documentation brought in line with what has been verified: capabilities, how-to (binding and delta builds), limits in `SKILL.md`.
+- A stability policy: what is stable in 1.x and what may change in a minor release.
+
 ## 0.8.0
 
 - **Audit** (`figma-bind/03-audit.js`): a read-only coverage report of an existing file: text styled, colours, radius and spacing bound, auto-layout share, generic names, and the top unbound values. Run it before to see the gap and after to prove the result.
