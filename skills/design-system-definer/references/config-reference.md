@@ -32,8 +32,8 @@ brands:
 | `anchors` | `{}` | `{name: "#hex"}`; each becomes a ramp `color/<slug>/<name>/<step>` |
 | `primary` | first anchor, else `neutral` | the anchor that drives primary actions |
 | `neutral` | first of `color.neutrals` | `warm`, `cool`, or your own name |
-| `fonts` | Inter | `{heading, body}`; body defaults to heading |
-| `weights` | 600 / 400 | `{heading, body}` |
+| `fonts` | Inter | `{heading, body, ui}`; body defaults to heading. `ui` is optional: set it to add a third role for navigation, buttons and list labels (`type/family/ui`); brands that omit it fall back to body. When on, `Label/*` text styles use it |
+| `weights` | 600 / 400 | `{heading, body, ui}`; `ui` defaults to 500 when the ui font is on |
 | `radius` | 8 / 8 / 8 / 4 | `{button, field, card, control}` in px or `full` |
 | `border` | 1 / 2 | `{default, focus}` px |
 | `density` | `default` | `roomy` uses larger section and stack gaps |
@@ -48,6 +48,7 @@ brands:
 | `steps` | 50, 100, ..., 900, 950 (must include 500 and 600) |
 | `neutrals` | `{cool: "#64748B", warm: "#78716C"}` |
 | `status` | red `#DC2626`, green `#16A34A`, amber `#D97706`, blue `#2563EB` |
+| `status_roles` | error: red, success: green, warning: amber, info: blue | point a role at another status hue, e.g. `status: {cyan: "#0891B2"}` and `status_roles: {success: cyan}` when success must not look like a green brand. Only the ramps a role uses are generated |
 
 ## Scales and device
 

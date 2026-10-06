@@ -64,9 +64,9 @@ python scripts/build.py examples/multi-brand-sample.yaml --approve --out ds-out
 - **Brands are modes, never collections.** Semantic tokens are aliases only.
 - **Indicator versus action split:** the fill can be light, but focus rings and selection marks use a darker step that meets 3:1.
 
-## Status (v0.2.0, see [CHANGELOG](CHANGELOG.md))
+## Status (v0.4.0, see [CHANGELOG](CHANGELOG.md))
 
-Generated and tested: primitives, device and brand/theme collections, contrast matrix, Figma build scripts, build plan, decision brief and records, DTCG. 74 tests; the multi-brand sample reproduces the structure of the real Multi-Brand DS Figma file (same collections, modes and variable names) with 0 failing pairs.
+Generated and tested: primitives, device and brand/theme collections, contrast matrix, Figma build scripts, build plan, decision brief and records, DTCG. 83 tests; the multi-brand sample reproduces the structure of the real Multi-Brand DS Figma file (same collections, modes and variable names) with 0 failing pairs.
 
 Built-in dimensions: `brand`, `theme`, `device`, `platform`, `density`, `a11y`, `context`, `locale`, combinable, plus your own through `custom_dimensions`. Layering (for example brand under theme) is automatic. Not generated: per-script line heights, and anything that needs math between modes, because Figma variables have none.
 

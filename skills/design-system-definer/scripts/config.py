@@ -99,8 +99,8 @@ DEFAULTS = {
 }
 
 BRAND_DEFAULTS = {
-    "fonts": {"heading": "Inter", "body": None},
-    "weights": {"heading": 600, "body": 400},
+    "fonts": {"heading": "Inter", "body": None, "ui": None},
+    "weights": {"heading": 600, "body": 400, "ui": None},
     "radius": {"button": 8, "field": 8, "card": 8, "control": 4},
     "border": {"default": 1, "focus": 2},
     "density": "default",
@@ -195,6 +195,18 @@ def load_config(path):
     cfg = deep_merge(cfg, user)
     cfg["_source_text"] = text
     cfg["color"]["contrast"] = resolve_contrast(cfg["color"]["contrast"])
+    roles_override = cfg["color"].pop("status_roles", None) or {}
+    bad_roles = [r for r in roles_override if r not in STATUS_ROLES]
+    if bad_roles:
+        raise ValueError(f"color.status_roles: unknown role(s) {bad_roles}; roles are {list(STATUS_ROLES)}")
+    cfg["status_roles"] = {**STATUS_ROLES, **{k: slugify(v) for k, v in roles_override.items()}}
+    cfg["color"]["status"] = {slugify(k): v for k, v in cfg["color"]["status"].items()}
+    missing = [h for h in cfg["status_roles"].values() if h not in cfg["color"]["status"]]
+    if missing:
+        raise ValueError(f"color.status_roles points at {missing}, which are not in color.status; add a hex for each")
+    # only the ramps a role uses are generated (so a renamed success hue does not leave the default green behind)
+    used = set(cfg["status_roles"].values())
+    cfg["color"]["status"] = {k: v for k, v in cfg["color"]["status"].items() if k in used}
     neutral_names = list(cfg["color"]["neutrals"])
 
     if not cfg["brands"]:
@@ -234,6 +246,9 @@ def load_config(path):
                                     **(cfg.get("base") or {})}, neutral_names)
             modes_brands = [base] + brands
     cfg["mode_brands"] = modes_brands
+    # only the neutral ramps a brand uses are generated
+    used_neutrals = {b["neutral"] for b in modes_brands}
+    cfg["color"]["neutrals"] = {k: v for k, v in cfg["color"]["neutrals"].items() if k in used_neutrals}
 
     dev = cfg["device"]
     n = len(dev["modes"])
@@ -258,6 +273,24 @@ def load_config(path):
             name = "Marketing/" + words
             if name not in have:
                 cfg["type"]["styles"].append([name, f"marketing-{k}", "heading", "heading"])
+    # Optional third font role "ui" (navigation, buttons, list labels). Off unless a brand sets fonts.ui.
+    cfg["ui_font"] = any(b["fonts"].get("ui") for b in modes_brands)
+    for b in modes_brands:
+        if cfg["ui_font"]:
+            b["fonts"]["ui"] = b["fonts"].get("ui") or b["fonts"]["body"]
+            b["weights"]["ui"] = b["weights"].get("ui") or 500
+        else:
+            b["fonts"].pop("ui", None)
+            b["weights"].pop("ui", None)
+    roles = ("heading", "body", "ui") if cfg["ui_font"] else ("heading", "body")
+    if cfg["ui_font"]:
+        defaults = {tuple(r) for r in DEFAULT_STYLES if r[0].startswith("Label/")}
+        cfg["type"]["styles"] = [[n, s, "ui", "ui"] if (n, s, f, w) in defaults else [n, s, f, w]
+                                 for n, s, f, w in cfg["type"]["styles"]]
+    for name, _size, fam, wt in cfg["type"]["styles"]:
+        if fam not in roles or wt not in roles:
+            raise ValueError(f"text style {name!r} uses font role {fam!r}/{wt!r}; "
+                             f"available roles: {list(roles)} (set fonts.ui on a brand to enable 'ui')")
     if cfg["tiers"]["component_tokens"] not in ("none", "minimal", "full"):
         raise ValueError("tiers.component_tokens must be none, minimal or full")
     return cfg

@@ -7,7 +7,7 @@ anchor or contrast target re-derives a passing system.
 from dataclasses import dataclass
 
 from color import contrast_ratio
-from config import STATUS_ROLES, slugify
+from config import slugify
 from contrast import check_pair
 from model import Alias, Collection, Variable
 from primitives import prim_path, validate_path
@@ -25,6 +25,9 @@ COLOR_META = {
     "color/action/secondary/pressed": (["FRAME_FILL", "SHAPE_FILL"], "Secondary action fill while pressed"),
     "color/surface/brand": (["FRAME_FILL", "SHAPE_FILL"], "Brand-colored surface (hero, banner); pair with color/text/on-brand"),
     "color/surface/page": (["FRAME_FILL", "SHAPE_FILL", "EFFECT_COLOR"], "Page background"),
+    "color/surface/inverse": (["FRAME_FILL", "SHAPE_FILL"], "Dark surface on a light page (sidebar, footer band); pair with color/text/inverse"),
+    "color/surface/brand-deep": (["FRAME_FILL", "SHAPE_FILL"], "Deep brand-colored section; pair with color/text/inverse"),
+    "color/surface/brand-subtle": (["FRAME_FILL", "SHAPE_FILL"], "Pale brand tint for selected rows, highlights and tags; text/primary and text/brand read on it"),
     "color/surface/card": (["FRAME_FILL", "SHAPE_FILL"], "Cards, fields and containers"),
     "color/surface/disabled": (["FRAME_FILL", "SHAPE_FILL"], "Disabled controls and fields"),
     "color/surface/error": (["FRAME_FILL", "SHAPE_FILL"], "Error message background"),
@@ -40,6 +43,8 @@ COLOR_META = {
     "color/text/warning": (["TEXT_FILL", "STROKE_COLOR"], "Warning text"),
     "color/text/info": (["TEXT_FILL", "STROKE_COLOR"], "Info text"),
     "color/text/on-brand": (["SHAPE_FILL", "TEXT_FILL", "STROKE_COLOR"], "Text on color/surface/brand"),
+    "color/text/inverse": (["SHAPE_FILL", "TEXT_FILL", "STROKE_COLOR"], "Text and icons on color/surface/inverse and color/surface/brand-deep"),
+    "color/text/brand": (["TEXT_FILL", "STROKE_COLOR"], "Brand-colored text and links on page, card and brand-subtle"),
     "color/border/default": (["STROKE_COLOR"], "Field and control borders (3:1 non-text contrast)"),
     "color/border/strong": (["STROKE_COLOR"], "Emphasized borders"),
     "color/border/subtle": (["STROKE_COLOR"], "Decorative dividers; exempt from contrast requirements"),
@@ -62,8 +67,10 @@ NUM_META = {
     "space/stack": (["GAP"], "Gap between stacked items"),
     "type/weight/heading": (["FONT_WEIGHT"], "Heading font weight"),
     "type/weight/body": (["FONT_WEIGHT"], "Body font weight"),
+    "type/weight/ui": (["FONT_WEIGHT"], "Interface label font weight (navigation, buttons, list labels)"),
     "type/family/heading": (["FONT_FAMILY"], "Heading font family"),
     "type/family/body": (["FONT_FAMILY"], "Body font family"),
+    "type/family/ui": (["FONT_FAMILY"], "Interface label font family (navigation, buttons, list labels)"),
     "easing/standard": (["ALL_SCOPES"], "Standard motion easing curve"),
     "component/button/height": (["WIDTH_HEIGHT"], "Button height"),
     "component/field/height": (["WIDTH_HEIGHT"], "Text field height"),
@@ -75,6 +82,7 @@ NUM_META = {
 # ---------------------------------------------------------------- color rules
 class Deriver:
     def __init__(self, prims, cfg):
+        self.cfg = cfg
         self.P = prims.values
         self.ramps = prims.ramps
         self.steps = cfg["color"]["steps"]
@@ -133,7 +141,7 @@ class Deriver:
         o["color/text/secondary"] = self.search(N, 600 if not dark else 400, d, lambda p: both(p, text))
         o["color/border/default"] = self.search(N, 400 if not dark else 600, d, lambda p: both(p, ui))
 
-        for role, hue in STATUS_ROLES.items():
+        for role, hue in self.cfg["status_roles"].items():
             hp = f"color/{hue}"
             surf = f"{hp}/{50 if not dark else 950}"
             o[f"color/surface/{role}"] = surf
@@ -184,6 +192,26 @@ class Deriver:
         o["color/action/on-primary"] = on_primary
         o["color/surface/brand"] = fill
         o["color/text/on-brand"] = o["color/action/on-primary"]
+        # Inverse and deep-brand surfaces, the brand tint, and brand-colored text.
+        o["color/surface/inverse"] = n(950) if not dark else n(50)
+        if b["primary"] == "neutral":
+            o["color/surface/brand-deep"] = n(900) if not dark else n(100)
+            o["color/surface/brand-subtle"] = n(100) if not dark else n(800)
+        else:
+            deep_start = 900 if not dark else 100
+            o["color/surface/brand-deep"] = self.search(
+                fp, deep_start, d, lambda p: any(self.c(c, p) >= text for c in on_candidates[:2]))
+            o["color/surface/brand-subtle"] = f"{fp}/{50 if not dark else 950}"
+        inv_bgs = [o["color/surface/inverse"], o["color/surface/brand-deep"]]
+        o["color/text/inverse"] = next(
+            (c for c in on_candidates if all(self.c(c, bg) >= text for bg in inv_bgs)),
+            max(on_candidates, key=lambda c: min(self.c(c, bg) for bg in inv_bgs)))
+        if b["primary"] == "neutral":
+            o["color/text/brand"] = n(900) if not dark else n(100)
+        else:
+            o["color/text/brand"] = self.search(
+                fp, 600 if not dark else 400, d,
+                lambda p: all(self.c(p, bg) >= text for bg in (page, card, o["color/surface/brand-subtle"])))
         if b["primary"] == "neutral":
             ind = fill
         else:
@@ -317,7 +345,7 @@ def plan_tokens(cfg):
     P.chain("border-width/focus", "number", "brand",
             {b["name"]: ("prim", "border", b["border"]["focus"]) for b in brands}, *NUM_META["border-width/focus"],
             overrides={"a11y": lambda m: ("prim", "border", a11y["large_focus_width"]) if m == "Large text" else None})
-    for role in ("heading", "body"):
+    for role in (("heading", "body", "ui") if cfg["ui_font"] else ("heading", "body")):
         P.add("brand", f"type/weight/{role}", "number",
               {b["name"]: ("prim", "weight", b["weights"][role]) for b in brands}, *NUM_META[f"type/weight/{role}"])
         P.chain(f"type/family/{role}", "string", "brand",
@@ -511,6 +539,10 @@ TEXT_PAIRS = [
     ("color/action/on-primary", "color/action/primary/pressed"),
     ("color/text/on-brand", "color/surface/brand"),
     ("color/on-indicator", "color/indicator"),
+    ("color/text/inverse", "color/surface/inverse"), ("color/text/inverse", "color/surface/brand-deep"),
+    ("color/text/brand", "color/surface/page"), ("color/text/brand", "color/surface/card"),
+    ("color/text/brand", "color/surface/brand-subtle"),
+    ("color/text/primary", "color/surface/brand-subtle"),
 ]
 UI_PAIRS = [
     ("color/indicator", "color/surface/page"), ("color/indicator", "color/surface/card"),
@@ -524,7 +556,7 @@ EXEMPT = ["color/text/disabled", "color/border/subtle", "color/surface/track",
 def check_semantic(cfg, prims, derived):
     targets = cfg["color"]["contrast"]
     text_pairs, ui_pairs = list(TEXT_PAIRS), list(UI_PAIRS)
-    for role in STATUS_ROLES:
+    for role in cfg["status_roles"]:
         text_pairs += [(f"color/text/{role}", "color/surface/card"),
                        (f"color/text/{role}", f"color/surface/{role}")]
         ui_pairs.append((f"color/border/{role}", "color/surface/card"))

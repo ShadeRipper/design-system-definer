@@ -18,7 +18,7 @@ A brand fill can be a good *button* and a bad *focus ring*. A light fill (yellow
 
 ## Pairs checked in every mode
 
-Text: primary and secondary on page and card; on-primary on default, hover and pressed fills; on-brand on brand surface; on-indicator on indicator; each status text on card and on its own surface.
+Text: primary and secondary on page and card; on-primary on default, hover and pressed fills; on-brand on brand surface; inverse on the inverse and deep-brand surfaces; brand text on page, card and the brand tint; on-indicator on indicator; each status text on card and on its own surface.
 UI: indicator and default border on page and card; primary border on page; each status border on card.
 
 Exempt, and listed in the matrix notes: disabled text, subtle (decorative) borders, disabled and track surfaces.

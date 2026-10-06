@@ -33,7 +33,7 @@ GOTCHAS = [
 
 def build_plan(cfg, collections, script_names):
     counts = ", ".join(f"{c.name}: {len(c.modes)} mode(s), {len(c.variables)} variables" for c in collections)
-    fonts = sorted({b["fonts"][r] for b in cfg["mode_brands"] for r in ("heading", "body")})
+    fonts = sorted({b["fonts"][r] for b in cfg["mode_brands"] for r in b["fonts"]})
     L = ["# Figma build plan", "",
          "Skills used: `figma-use` (mandatory before every `use_figma` call) and `figma-generate-library` "
          "for components. Stop at every checkpoint and let the designer review.", "",

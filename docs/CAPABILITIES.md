@@ -1,6 +1,6 @@
 # What the Design System Definer can and can't do
 
-Read this to know exactly what you are getting. Version 0.2.0.
+Read this to know exactly what you are getting. Version 0.4.0.
 
 **In one line:** it guides you through defining a design system, then generates accessible design tokens and the scripts that build them in Figma. It defines and builds the *foundation* (variables, modes, text styles). It does not design components or screens.
 
@@ -22,7 +22,7 @@ Read this to know exactly what you are getting. Version 0.2.0.
 From your answers, in `ds-out/`:
 
 - **Primitives:** colour ramps (11 steps per colour), spacing, radius, border width, sizes, font sizes, line heights, weights, font families, motion durations.
-- **Semantic tokens:** action colours (default, hover, pressed, border, text on it), surfaces, text, borders, status colours (error, success, warning, info), focus and selection indicator, radius, spacing rhythm, type, easing. Every one is an alias of a primitive; none holds a raw value.
+- **Semantic tokens:** action colours (default, hover, pressed, border, text on it), surfaces (including inverse, deep-brand and a brand tint), text (including inverse and brand text), borders, status colours (error, success, warning, info), focus and selection indicator, radius, spacing rhythm, type, easing. Every one is an alias of a primitive; none holds a raw value.
 - **Contrast matrix:** every text and UI colour pair in every mode, with its ratio, and a suggested fix for any failure.
 - **Figma build scripts, text styles, build plan** with human checkpoints, **decision brief**, **decision records**, **DTCG tokens**.
 
@@ -85,7 +85,7 @@ Building components or screens (use Figma's `figma-generate-library` and `figma-
 
 | | |
 | --- | --- |
-| Verified by 74 automated tests | ramps, contrast across hundreds of colours at AA, AAA and custom, every dimension alone and all together, layering, ordering of collections, determinism, the sign-off gate, install packaging |
+| Verified by 83 automated tests | ramps, contrast across hundreds of colours at AA, AAA and custom, every dimension alone and all together, layering, ordering of collections, determinism, the sign-off gate, install packaging |
 | Verified by hand | the script mechanics in a real Figma file: cross-collection aliases, modes, scopes, text styles bound to variables. Output structure matches a real multi-brand Figma system |
 | Not yet verified | the full generated scripts for every shape in Figma; native JSON import; the interview across many real conversations; a Style Dictionary build |
 

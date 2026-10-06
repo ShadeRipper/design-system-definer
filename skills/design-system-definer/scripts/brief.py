@@ -85,8 +85,9 @@ def build_brief(cfg, prims, collections, results):
                 L.append(f"- **{key}**{role}: `{hexv.upper()}` {where}")
         else:
             L.append("- no brand color: primary action uses the neutral ramp")
-        L.append(f"- neutral: {b['neutral']}; fonts: {b['fonts']['heading']} / {b['fonts']['body']}; "
-                 f"weights: {b['weights']['heading']} / {b['weights']['body']}")
+        L.append(f"- neutral: {b['neutral']}; fonts: {' / '.join(str(v) for v in b['fonts'].values())} "
+                 f"({' / '.join(b['fonts'])}); "
+                 f"weights: {' / '.join(str(v) for v in b['weights'].values())}")
         L.append(f"- shape: button {b['radius']['button']}, field {b['radius']['field']}, "
                  f"card {b['radius']['card']}, control {b['radius']['control']}; density: {b['density']}")
         for word in b.get("essence") or []:

@@ -17,12 +17,12 @@ Steps default to 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950. Every anc
 ## Semantic roles
 
 Action: `color/action/primary/{default,hover,pressed,border}`, `color/action/on-primary`, `color/action/secondary/{hover,pressed}`.
-Surface: `color/surface/{brand,page,card,disabled,error,success,warning,info,track}`.
-Text: `color/text/{primary,secondary,disabled,error,success,warning,info,on-brand}`.
+Surface: `color/surface/{brand,brand-deep,brand-subtle,inverse,page,card,disabled,error,success,warning,info,track}`. `inverse` and `brand-deep` are dark surfaces on a light page; `text/inverse` reads on both.
+Text: `color/text/{primary,secondary,disabled,error,success,warning,info,on-brand,inverse,brand}`.
 Border: `color/border/{default,strong,subtle,error,success,warning,info}`.
 Indicator: `color/indicator`, `color/on-indicator` (focus, selection, progress; see accessibility).
 Shape and rhythm: `radius/{button,field,card,control,round}`, `border-width/{default,focus}`, `space/{section,stack}`.
-Type: `type/family/{heading,body}`, `type/weight/{heading,body}`, device `type/size/*`, `type/line-height/*`.
+Type: `type/family/{heading,body}` (plus `ui` when a brand sets `fonts.ui`), `type/weight/{heading,body}` (plus `ui`), device `type/size/*`, `type/line-height/*`.
 Motion: `easing/standard` (literal cubic bezier).
 
 Component-token tier (`tiers.component_tokens`): `none` drops `radius/control`, `radius/round`, `size/control`, `size/icon`; `minimal` (default) keeps them; `full` adds `component/{button,field}/height`, `component/checkbox/size`, `component/progress/height`.
