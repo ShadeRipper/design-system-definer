@@ -38,7 +38,7 @@ Then ask: *"Help me define a design system."* Python 3.8+ is the only requiremen
 ## Use without Claude
 
 ```bash
-cd skills/define
+cd skills/defsys
 python scripts/build.py examples/multi-brand-sample.yaml                 # playback: prints the decision brief, writes nothing
 python scripts/build.py examples/multi-brand-sample.yaml --approve --out ds-out
 ```
@@ -66,7 +66,7 @@ python scripts/build.py examples/multi-brand-sample.yaml --approve --out ds-out
 - **Brands are modes, never collections.** Semantic tokens are aliases only.
 - **Indicator versus action split:** the fill can be light, but focus rings and selection marks use a darker step that meets 3:1.
 
-## Status (v1.0.1, see [CHANGELOG](CHANGELOG.md))
+## Status (v1.0.2, see [CHANGELOG](CHANGELOG.md))
 
 Generated and tested: primitives, device and brand/theme collections, contrast matrix, Figma build scripts, build plan, decision brief and records, DTCG, scripts that bind an existing design to the tokens, and read-only audit and inventory. 95 tests. Run end to end on a real product-and-website file of about 20,000 layers (Figma build, binding, Style Dictionary). The multi-brand sample reproduces the structure of a real multi-brand Figma file with 0 failing pairs. See [CAPABILITIES](docs/CAPABILITIES.md) for what is and is not verified.
 

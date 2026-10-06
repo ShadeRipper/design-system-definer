@@ -1,6 +1,6 @@
 # What the Design System Definer can and can't do
 
-Read this to know exactly what you are getting. Version 1.0.1.
+Read this to know exactly what you are getting. Version 1.0.2.
 
 **In one line:** it guides you through defining a design system, then generates accessible design tokens and the scripts that build them in Figma. It defines and builds the *foundation* (variables, modes, text styles). It does not design components or screens.
 

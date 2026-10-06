@@ -76,7 +76,7 @@ class AuditAndInventory(unittest.TestCase):
             self.assertNotIn(write, body)  # the audit never writes
 
     def test_inventory_template_is_standalone_and_read_only(self):
-        src = (Path(__file__).resolve().parent.parent / "skills" / "define" / "templates" / "inventory.js").read_text(encoding="utf-8")
+        src = (Path(__file__).resolve().parent.parent / "skills" / "defsys" / "templates" / "inventory.js").read_text(encoding="utf-8")
         self.assertNotIn("CONFIG", src)  # runs before any config exists
         for write in (".setTextStyleIdAsync", ".setBoundVariable(", ".fills =", ".name ="):
             self.assertNotIn(write, src)

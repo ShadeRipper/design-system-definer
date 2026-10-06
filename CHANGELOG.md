@@ -2,6 +2,11 @@
 
 Versions follow [semantic versioning](https://semver.org). Below 1.0, a minor bump (0.x) adds capability and may change details; a patch bump (0.x.y) is fixes only.
 
+## 1.0.2
+
+- The skill is renamed from `define` to `defsys` (picker shows `design-system-definer:defsys`). Folder: `skills/defsys/`. Skill names allow only lowercase letters, digits and hyphens, so a dotted name is not valid.
+- No changes to config keys, tokens or outputs.
+
 ## 1.0.1
 
 Naming fix: the skill picker showed the same name three times (`design-system-definer:design-system-definer (design-system-definer)`).
