@@ -14,6 +14,8 @@ from brief import build_brief, build_records
 from build_plan import build_plan
 from config import load_config
 from contrast import to_csv, to_markdown
+from delta import delta_readme, load_scripts, make_delta
+from export_bind import export_bind_scripts
 from export_dtcg import export_dtcg, style_dictionary_config
 from export_figma import export_build_scripts, export_native_json, text_style_defs
 from primitives import build_primitives
@@ -48,6 +50,9 @@ def render_files(cfg, prims, collections, results, notes):
             files[f"figma-build/{name}"] = body
     else:
         scripts = {}
+    if "bind" in outputs:
+        for name, body in export_bind_scripts(cfg, collections).items():
+            files[f"figma-bind/{name}"] = body
     if "dtcg" in outputs:
         for name, body in export_dtcg(collections).items():
             files[f"dtcg/tokens/{name}"] = body
@@ -65,6 +70,7 @@ def main(argv=None):
     ap.add_argument("config")
     ap.add_argument("--approve", action="store_true", help="designer signed off the brief; write files")
     ap.add_argument("--out", default="out")
+    ap.add_argument("--previous", help="a previous build folder; also write figma-build-delta/ with only what changed")
     args = ap.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
@@ -90,6 +96,16 @@ def main(argv=None):
         p = out / rel
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(body, encoding="utf-8", newline="\n")
+    if args.previous:
+        new_scripts = {k.split("/", 1)[1]: v for k, v in files.items() if k.startswith("figma-build/")}
+        delta, report = make_delta(load_scripts(args.previous), new_scripts)
+        for name, body in delta.items():
+            p = out / "figma-build-delta" / name
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(body, encoding="utf-8", newline=chr(10))
+        (out / "figma-build-delta").mkdir(parents=True, exist_ok=True)
+        (out / "figma-build-delta" / "README.md").write_text(delta_readme(report), encoding="utf-8", newline=chr(10))
+        print(f"delta: {sum(report['changed'].values())} new or changed item(s) in {len(delta)} script(s)")
     print(f"{len(results)} pairs checked, 0 failing; wrote {len(files)} files to {out}")
     return 0
 

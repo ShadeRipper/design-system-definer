@@ -65,6 +65,14 @@ def build_plan(cfg, collections, script_names):
               f"- [ ] Bind: {', '.join('`' + t + '`' for t in toks) if toks else '(no tokens mapped; define them in the config)'}",
               "- [ ] Check every mode of every collection in a screenshot.", "",
               f"**CHECKPOINT ({comp}):** designer approves before the next component.", ""]
+    if "bind" in cfg["outputs"]:
+        L += ["## Phase 3b: bind the existing screens (optional)", "",
+              "Use this when the file already has screens. Scripts are in `figma-bind/`; read `figma-bind/README.md` first.", "",
+              "- [ ] Save a named version in Figma.",
+              "- [ ] Dry run `01-bind-styles-colours-radius.js` on the screens (`APPLY_FLAG = false`) and read the counts.",
+              "- [ ] Pilot one frame per section, apply, and compare screenshots before and after.",
+              "- [ ] Apply in batches, then run `02-structure.js` the same way (dry run, pilot, batches).", "",
+              "**CHECKPOINT (screens):** designer reviews the unbound lists and the before and after screenshots.", ""]
     L += ["## Phase 4: hand-off", "",
           "- [ ] Download the `.fig` file and import it into Claude Design. If modes or descriptions are "
           "flattened, add the `dtcg/` folder to Claude Design instead.",

@@ -40,7 +40,7 @@ Python 3.8+ is the only requirement (PyYAML is bundled in `scripts/_vendor`). Ru
 
 ## Outputs (in `ds-out/`)
 
-Always: `decision-brief.md`, `ds.config.yaml`, `contrast-matrix.md/.csv`, primitives. By `outputs:` in the config: `figma/` (native variable JSON), `figma-build/` (use_figma scripts), `dtcg/` (tokens plus Style Dictionary config), `decision-records/`, `build-plan.md`.
+Always: `decision-brief.md`, `ds.config.yaml`, `contrast-matrix.md/.csv`, primitives. By `outputs:` in the config: `figma/` (native variable JSON), `figma-build/` (use_figma scripts), `dtcg/` (tokens plus Style Dictionary config), `decision-records/`, `build-plan.md`, `figma-bind/` (scripts that bind an existing design; see [bind-existing-designs](references/bind-existing-designs.md)). Rebuild with `--previous OLD_OUT` to also get `figma-build-delta/`, only what changed.
 
 ## How you behave in the interview
 
@@ -59,4 +59,4 @@ Native Figma variable JSON (`figma/`) is best-effort until validated against a r
 
 ## References
 
-[interview](references/interview.md) · [levers](references/levers.md) · [system types](references/system-types.md) · [token architecture](references/token-architecture.md) · [accessibility](references/accessibility.md) · [Figma gotchas](references/figma-gotchas.md) · [config reference](references/config-reference.md) · templates: [decision brief](templates/decision-brief.md), [decision record](templates/decision-record.md)
+[interview](references/interview.md) · [levers](references/levers.md) · [system types](references/system-types.md) · [token architecture](references/token-architecture.md) · [accessibility](references/accessibility.md) · [Figma gotchas](references/figma-gotchas.md) · [config reference](references/config-reference.md) · [bind existing designs](references/bind-existing-designs.md) · templates: [decision brief](templates/decision-brief.md), [decision record](templates/decision-record.md)

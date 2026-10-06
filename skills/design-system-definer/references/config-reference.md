@@ -19,7 +19,7 @@ brands:
 | `base_mode` | `ask` | `include` or `none`; must be decided when `brand` is a dimension |
 | `base` | `{}` | overrides for the Base mode (fonts, radius, weights, ...) |
 | `brands` | required | list, see below |
-| `outputs` | figma, dtcg, decision-records, build-plan | which optional outputs to write |
+| `outputs` | figma, dtcg, decision-records, build-plan | which optional outputs to write; add `bind` for scripts that bind an existing design to the tokens ([bind-existing-designs.md](bind-existing-designs.md)) |
 | `components` | button, text-field, checkbox, radio, selectable-card, progress, feedback | handed to the build plan |
 | `tiers.component_tokens` | `minimal` | `none`, `minimal`, `full` |
 

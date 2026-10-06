@@ -1,7 +1,7 @@
 {
   "name": "design-system-definer",
   "description": "Define a design system before building it: discovery interview, decision brief, contrast-checked tokens, Figma build scripts and a build plan.",
-  "version": "0.4.0",
+  "version": "0.6.0",
   "author": {
     "name": "Gaurav Sharma"
   },

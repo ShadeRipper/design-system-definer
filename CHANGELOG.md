@@ -2,6 +2,14 @@
 
 Versions follow [semantic versioning](https://semver.org). Below 1.0, a minor bump (0.x) adds capability and may change details; a patch bump (0.x.y) is fixes only.
 
+## 0.6.0
+
+- **Bind an existing design.** With `outputs: [..., bind]` the build writes `figma-bind/`: scripts, generated from your config, that bind a file's existing layers to the tokens. Text styles (by family role, weight and size), colour variables (nearest in Lab, semantic preferred, text colour by background), radius, spacing, role names and verified auto-layout. Dry run by default; every auto-layout change is checked and rolled back if a child moves.
+- **Delta builds.** `build.py ... --previous OLD_OUT` writes `figma-build-delta/`: only new or changed variables and text styles, plus a list of what was removed (never deleted for you).
+- New reference: `bind-existing-designs.md` with the method, the rules and eight gotchas found on a real file.
+- The build plan gains a "bind the existing screens" phase when `bind` is on.
+- 92 tests (from 83); generated scripts are syntax-checked with Node when it is installed.
+
 ## 0.4.0
 
 - Tested on a real product-and-website file: the first end-to-end run of the interview, build and Figma scripts on an existing design.
