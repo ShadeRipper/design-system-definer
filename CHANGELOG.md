@@ -2,6 +2,14 @@
 
 Versions follow [semantic versioning](https://semver.org). Below 1.0, a minor bump (0.x) adds capability and may change details; a patch bump (0.x.y) is fixes only.
 
+## 1.0.1
+
+Naming fix: the skill picker showed the same name three times (`design-system-definer:design-system-definer (design-system-definer)`).
+
+- The skill is now `define`, so it appears as `design-system-definer:define`. The folder moved to `skills/define/`.
+- The marketplace is now `shaderipper`. Install with `/plugin install design-system-definer@shaderipper`; anyone who added the old marketplace should run `/plugin marketplace add ShadeRipper/design-system-definer` again.
+- No changes to config keys, tokens or outputs.
+
 ## 1.0.0
 
 First stable release. Stable means the config keys, token names, output file names, exit codes and the sign-off gate will not break within 1.x (see `docs/CAPABILITIES.md`).

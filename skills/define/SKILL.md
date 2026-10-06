@@ -1,5 +1,5 @@
 ---
-name: design-system-definer
+name: define
 description: Guides a designer through defining a design system before building it in Figma, then generates an accessible token foundation. Use when someone wants to start, define, plan or set up a design system, design tokens, brand themes, multi-brand or white-label systems, light/dark modes, color ramps with WCAG contrast, or a Figma variables structure. Runs a one-question-at-a-time discovery interview, plays back a decision brief for sign-off, then writes contrast-checked primitives, semantic tokens, Figma build scripts, a build plan and DTCG tokens.
 ---
 

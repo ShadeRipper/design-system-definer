@@ -7,7 +7,7 @@ import zipfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-SKILL = REPO / "skills" / "design-system-definer"
+SKILL = REPO / "skills" / "define"
 OUT = REPO / "dist" / "design-system-definer.skill"
 
 

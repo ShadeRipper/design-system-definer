@@ -94,7 +94,7 @@ Add `bind` to `outputs:` in the config. The build then writes `figma-bind/`: scr
 3. **Pilot one frame**, compare screenshots before and after.
 4. Apply in batches, then run the read-only audit for measured coverage.
 
-What it leaves alone, on purpose, is listed in [bind-existing-designs.md](../skills/design-system-definer/references/bind-existing-designs.md). Changing the config later? Rebuild with `--previous <old build folder>` and run only `figma-build-delta/`.
+What it leaves alone, on purpose, is listed in [bind-existing-designs.md](../skills/define/references/bind-existing-designs.md). Changing the config later? Rebuild with `--previous <old build folder>` and run only `figma-build-delta/`.
 
 ### 6. Hand off
 Download the `.fig` file and import it into Claude Design, or give developers the `dtcg/` folder.
@@ -123,7 +123,7 @@ Download the `.fig` file and import it into Claude Design, or give developers th
 **Can I skip Claude?** Yes, with Python 3.8+:
 
 ```bash
-cd skills/design-system-definer
+cd skills/define
 python scripts/build.py my.config.yaml                      # prints the brief; writes nothing
 python scripts/build.py my.config.yaml --approve --out ds-out
 ```
