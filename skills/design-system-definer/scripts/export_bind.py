@@ -6,6 +6,7 @@ hard-coded to one brand. Templates live in templates/bind/.
 
   01-bind-styles-colours-radius.js   text styles, colour variables, radius variables
   02-structure.js                    verified auto-layout, role names, spacing variables
+  03-audit.js                        read-only coverage report
 """
 import json
 from pathlib import Path
@@ -121,8 +122,9 @@ variables and text styles exist in the file.
 4. **Pilot on one frame per section**, then compare screenshots before and after. A binding pass should
    change almost no pixels; auto-layout and spacing passes should change none.
 5. Apply in batches of about 1,500 to 2,500 layers per call; frames can run as parallel calls.
+6. Run `03-audit.js` (read-only) for the measured coverage, before and after.
 
-Order: `01` then `02`.
+Order: `01`, then `02`, then `03`. To see what an existing file uses *before* you define anything, run `templates/inventory.js` from the skill (no config needed).
 
 What is skipped on purpose: layers inside instances (they belong to another library or component),
 text that needs uppercase or underline (a style would reset it), italic text, large regular-weight
@@ -135,4 +137,5 @@ def export_bind_scripts(cfg, collections):
     config = bind_config(cfg, collections)
     return {"01-bind-styles-colours-radius.js": _script("bind text styles, colours and radius", "bind-styles-colours-radius.js", config),
             "02-structure.js": _script("structure: auto-layout, names, spacing", "structure.js", config, options=True),
+            "03-audit.js": _script("audit: read-only coverage report", "audit.js", config),
             "README.md": README}

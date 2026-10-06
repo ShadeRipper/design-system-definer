@@ -13,7 +13,7 @@ brands:
 
 | Key | Default | Meaning |
 | --- | --- | --- |
-| `preset` | none | one of the files in `presets/` (single-brand-light-dark, multi-brand-white-label, brand-theme-white-label, house-of-brands, multi-platform, responsive-density, product-marketing, accessibility-variants, multi-locale, marketing-site) |
+| `preset` | none | one of the files in `presets/` (single-brand-light-dark, multi-brand-white-label, brand-theme-white-label, house-of-brands, multi-platform, responsive-density, product-marketing, accessibility-variants, multi-locale, marketing-site, web-product-and-site) |
 | `system_type` | custom | label shown in the brief |
 | `dimensions` | from preset, else `[brand]` if more than one brand | any of `brand`, `theme`, `device`, `platform`, `density`, `a11y`, `context`, `locale`; combine freely |
 | `base_mode` | `ask` | `include` or `none`; must be decided when `brand` is a dimension |

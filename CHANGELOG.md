@@ -2,6 +2,15 @@
 
 Versions follow [semantic versioning](https://semver.org). Below 1.0, a minor bump (0.x) adds capability and may change details; a patch bump (0.x.y) is fixes only.
 
+## 0.8.0
+
+- **Audit** (`figma-bind/03-audit.js`): a read-only coverage report of an existing file: text styled, colours, radius and spacing bound, auto-layout share, generic names, and the top unbound values. Run it before to see the gap and after to prove the result.
+- **Inventory** (`templates/inventory.js`): read-only, needs no config. Tallies the fonts, sizes, colours by area, radii and spacing a file really uses, so the interview starts from evidence.
+- **Interview stage 0 for an existing file**: ask for the link and which pages to read, run the inventory, present what the evidence says before asking, and say up front what the system will not cover (chart colours, illustration).
+- Font question now asks whether a family is used for a specific job (navigation, buttons, labels), which is what `fonts.ui` is for.
+- New preset `web-product-and-site`: a web product plus a marketing site on one brand, desktop and web only, with room to add mobile and other platforms.
+- 95 tests (from 92).
+
 ## 0.6.0
 
 - **Bind an existing design.** With `outputs: [..., bind]` the build writes `figma-bind/`: scripts, generated from your config, that bind a file's existing layers to the tokens. Text styles (by family role, weight and size), colour variables (nearest in Lab, semantic preferred, text colour by background), radius, spacing, role names and verified auto-layout. Dry run by default; every auto-layout change is checked and rolled back if a child moves.

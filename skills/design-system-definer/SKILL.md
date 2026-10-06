@@ -21,6 +21,7 @@ Python 3.8+ is the only requirement (PyYAML is bundled in `scripts/_vendor`). Ru
 
 1. **Pick a mode.** Ask once: Guided (default) or Express (they already have a filled config, a brand guide, or want to paste colors and fonts). Ask once whether this is their first design system and adapt depth: explain more for a first system, less for an experienced one.
    - Express: read what they supply, fill the config, and ask only about gaps and contradictions.
+   - Existing Figma file: ask for the link and which pages to read, run `templates/inventory.js` (read-only), and start the interview from that evidence ([interview stage 0](references/interview.md)).
 2. **Run the seven stages, one question at a time.** Each question gets a one-line *why this matters* and an example answer. Full question bank, follow-ups and vague-answer challenges: [references/interview.md](references/interview.md).
    1. Context: **system type first** ([references/system-types.md](references/system-types.md)), then product, platforms, audience, brand count, existing assets.
    2. Brand essence: three words per brand and one thing it must never feel like.
@@ -32,7 +33,7 @@ Python 3.8+ is the only requirement (PyYAML is bundled in `scripts/_vendor`). Ru
 3. **Save as you go.** After each stage update `ds.config.yaml` (keys: [references/config-reference.md](references/config-reference.md); presets in `presets/`; a full example in `examples/multi-brand-sample.yaml`). A later session resumes from the file.
 4. **Playback.** Run `python scripts/build.py ds.config.yaml` with no flags. It prints the decision brief and writes nothing. Present it, explain any flagged anchors, and invite changes. Loop (edit config, re-run) until the designer approves explicitly.
 5. **Generate.** After approval: `python scripts/build.py ds.config.yaml --approve --out ds-out`. A failing contrast pair blocks export (exit 1) and prints a suggested fix; discuss it and change the config, never the output.
-6. **Hand off.** Point them to `ds-out/build-plan.md`. Offer to run the Figma phases with the `figma-use` and `figma-generate-library` skills, executing `ds-out/figma-build/*.js` in order through `use_figma`, stopping at every checkpoint. If they have a Figma export fixture or Figma MCP access, say which path you used.
+6. **Hand off.** Point them to `ds-out/build-plan.md`. Offer to run the Figma phases with the `figma-use` and `figma-generate-library` skills, executing `ds-out/figma-build/*.js` in order through `use_figma`, stopping at every checkpoint. If the file already has screens, offer the `bind` output: dry run, pilot one frame, compare screenshots, then batches ([bind-existing-designs](references/bind-existing-designs.md)). If they have a Figma export fixture or Figma MCP access, say which path you used.
 
 ## Exit codes
 

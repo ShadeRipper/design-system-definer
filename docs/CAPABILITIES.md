@@ -1,6 +1,6 @@
 # What the Design System Definer can and can't do
 
-Read this to know exactly what you are getting. Version 0.6.0.
+Read this to know exactly what you are getting. Version 0.8.0.
 
 **In one line:** it guides you through defining a design system, then generates accessible design tokens and the scripts that build them in Figma. It defines and builds the *foundation* (variables, modes, text styles). It does not design components or screens.
 
@@ -17,6 +17,7 @@ Read this to know exactly what you are getting. Version 0.6.0.
 | Code tokens (DTCG, Style Dictionary) | Built and tested; the Style Dictionary build itself has not been run |
 | Binding an existing design's layers to the tokens | Built (opt-in `bind` output). Run on a real 20,000-layer file: styles, colours, radius, spacing, names, verified auto-layout |
 | Delta builds (only what changed) | Built |
+| Audit and inventory of an existing file (read-only) | Built; run on a real file |
 | Building components | Not built here; the build plan hands off to Figma's own skills |
 
 ## What it generates
@@ -87,7 +88,7 @@ Building components or screens (use Figma's `figma-generate-library` and `figma-
 
 | | |
 | --- | --- |
-| Verified by 92 automated tests | ramps, contrast across hundreds of colours at AA, AAA and custom, every dimension alone and all together, layering, ordering of collections, determinism, the sign-off gate, install packaging |
+| Verified by 95 automated tests | ramps, contrast across hundreds of colours at AA, AAA and custom, every dimension alone and all together, layering, ordering of collections, determinism, the sign-off gate, install packaging |
 | Verified by hand | the script mechanics in a real Figma file: cross-collection aliases, modes, scopes, text styles bound to variables. Output structure matches a real multi-brand Figma system |
 | Not yet verified | the full generated scripts for every shape in Figma; native JSON import; the interview across many real conversations; a Style Dictionary build |
 

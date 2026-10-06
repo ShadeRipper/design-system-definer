@@ -4,6 +4,17 @@ One question at a time. Each question: the question, a one-line *why this matter
 
 Open by asking: Guided or Express? First design system, or experienced? Then run the stages.
 
+## 0. Existing file (only if they have one)
+
+If the designer already has a Figma file, ask for the link and **which pages to read**. Reading every page burns budget; ask for the pages that carry context (brief, decisions, foundations, the screens) and read only those, read-only.
+
+1. Run [templates/inventory.js](../templates/inventory.js) through `use_figma` on the screens (no config needed). It returns the fonts, sizes, colours by area, radii and spacing the file really uses.
+2. Present what the evidence says before asking anything it already answers: *"Poppins sits on 650 navigation and button layers, Inter on content and data: that reads as a font per job. Right?"*; *"Your frames are all 1440 wide: desktop only?"*; *"White text on `#12362b` on 770 layers: you need dark surfaces."*
+3. Use the evidence ladder: file evidence ranks above taste but below a stated brand rule. If the file contradicts what they say, ask which one wins.
+4. Note what the file has but the system will not cover (data-visualisation colours, illustrations, images). Say so now.
+
+Existing styles and layers are **not** migrated by the interview. The `bind` output (see [bind-existing-designs.md](bind-existing-designs.md)) does that after sign-off.
+
 ## 1. Context
 
 | Ask | Why | Example |
@@ -44,7 +55,7 @@ Multi-brand only: **Base mode?** Include it for white-label systems (the brand i
 | --- | --- | --- |
 | Brand colors as hex, with a name for each (yellow, red). | Ramps are built from them; names become token names | `yellow: "#FFC72C"` |
 | Which one drives primary actions? | Sets `primary` | "yellow" |
-| Fonts per brand for headings and body. | Fonts are often proprietary; the type system binds to the family | "Nunito for both" |
+| Fonts per brand for headings and body. Is a family used for a specific job (navigation, buttons, labels)? | Fonts are often proprietary; the type system binds to the family. A family used by function rather than by heading or body gets its own `fonts.ui` role | "Nunito for both; Poppins only for nav and buttons" |
 | Neutral temperature per brand (warm, cool). | Neutrals carry most of the interface | "warm" |
 
 Check each anchor before moving on: a light brand color (like yellow) cannot carry white text and cannot be a 3:1 focus ring on white. Say so now; the skill pairs it with dark text and uses a darker step as the indicator. If fonts are proprietary, offer open substitutes and record the choice.

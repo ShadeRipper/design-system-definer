@@ -67,6 +67,29 @@ class BindScripts(unittest.TestCase):
         self.assertRegex(body, r'"16": "(Brand|Device)::space/md"')   # semantic step, not the primitive
 
 
+class AuditAndInventory(unittest.TestCase):
+    def test_audit_is_generated_and_read_only(self):
+        files = render_files(*build(BASE))
+        body = files["figma-bind/03-audit.js"]
+        self.assertIn("coverage", body)
+        for write in (".setTextStyleIdAsync", ".setBoundVariable(", ".fills =", ".name ="):
+            self.assertNotIn(write, body)  # the audit never writes
+
+    def test_inventory_template_is_standalone_and_read_only(self):
+        src = (Path(__file__).resolve().parent.parent / "skills" / "design-system-definer" / "templates" / "inventory.js").read_text(encoding="utf-8")
+        self.assertNotIn("CONFIG", src)  # runs before any config exists
+        for write in (".setTextStyleIdAsync", ".setBoundVariable(", ".fills =", ".name ="):
+            self.assertNotIn(write, src)
+        self.assertIs(node_ok(src), True)
+
+    def test_web_product_and_site_preset_builds_clean(self):
+        nl = chr(10)
+        cfg, _, cols, results, _ = build(nl.join(["preset: web-product-and-site", "brands:", "  - name: Acme", "    anchors: { green: '#0AC28C' }", ""]))
+        self.assertTrue(all(r.passed for r in results))
+        names = {v.path for c in cols for v in c.variables}
+        self.assertIn("type/size/marketing-display-xl", names)
+
+
 class Delta(unittest.TestCase):
     def test_only_new_and_changed_items_are_emitted(self):
         old = render_files(*build(BASE))

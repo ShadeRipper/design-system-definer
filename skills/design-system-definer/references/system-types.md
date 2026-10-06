@@ -16,6 +16,7 @@ A type is defined by **what varies and how independently**, not by a label. The 
 | Product plus marketing | compact vs expressive type | `[device, context]` | `product-marketing` |
 | Accessibility variants | large text, reduced motion | `[device, a11y, theme]` | `accessibility-variants` |
 | Multi-locale | script, reading direction | `[device, locale]` | `multi-locale` |
+| Web product plus marketing site | desktop and web now, room for more | `[device, platform, context]` | `web-product-and-site` |
 | Marketing site | device only | `[device]` | `marketing-site` |
 | Anything else | your own axes | any, plus `custom_dimensions` | none |
 

@@ -1,0 +1,49 @@
+# A web product (dashboard or app) plus a marketing website on one brand.
+# Desktop only for now: add a Mobile mode to `device` (and a value per token) when mobile arrives.
+# Web only for now: add iOS / Android to `platform` later without moving any token.
+# To use one family for navigation, buttons and list labels, set `fonts.ui` on the brand and add
+#   - [Label/L, body-l, ui, ui]   - [Label/M, body-m, ui, ui]   - [Label/S, body-s, ui, ui]
+# to type.styles.
+system_type: web product plus marketing site
+dimensions: [device, platform, context]
+outputs: [figma, dtcg, decision-records, build-plan, bind]
+device:
+  modes: [Desktop]
+  space: { xs: [4], sm: [8], md: [16], lg: [24], xl: [32], 2xl: [48] }
+  type:
+    display:    { size: [40], line: [48] }
+    heading-xl: { size: [32], line: [40] }
+    heading-l:  { size: [24], line: [32] }
+    heading-m:  { size: [18], line: [24] }
+    body-l:     { size: [16], line: [24] }
+    body-m:     { size: [14], line: [20] }
+    body-s:     { size: [13], line: [18] }
+    caption:    { size: [12], line: [16] }
+  margin: [40]
+  control: [40]
+  icon: [20]
+platform:
+  modes: [Web]
+  control: [44]
+  icon: [20]
+  duration: { short: [150], medium: [250], long: [400] }
+context:
+  marketing_type:
+    display-xl: { size: [64], line: [72] }
+    display-l:  { size: [48], line: [56] }
+type:
+  styles:
+    - [Heading/Display, display, heading, heading]
+    - [Heading/XL, heading-xl, heading, heading]
+    - [Heading/L, heading-l, heading, heading]
+    - [Heading/M, heading-m, heading, heading]
+    - [Body/L, body-l, body, body]
+    - [Body/M, body-m, body, body]
+    - [Body/S, body-s, body, body]
+    - [Body/Caption, caption, body, body]
+    - [Body/L Strong, body-l, body, heading]
+    - [Body/M Strong, body-m, body, heading]
+    - [Body/S Strong, body-s, body, heading]
+    - [Body/Caption Strong, caption, body, heading]
+    - [Label/M, body-m, body, heading]
+    - [Label/S, body-s, body, heading]
