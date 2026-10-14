@@ -8,6 +8,7 @@
    collections, modes, variables, scopes, descriptions and aliases, then text styles.
 """
 import json
+import re
 
 from color import hex_to_srgb_floats
 from config import slugify
@@ -159,6 +160,11 @@ def _chunk(col):
     return chunks
 
 
+def _comment_safe(text):
+    """Make text safe to embed in a single-line JS comment."""
+    return re.sub(r"[\r\n\u2028\u2029]+", " ", str(text))
+
+
 def export_build_scripts(collections, cfg):
     """{filename: JS source} for use_figma, in run order."""
     files, n = {}, 1
@@ -168,7 +174,7 @@ def export_build_scripts(collections, cfg):
             suffix = f"-part{i}" if len(chunks) > 1 else ""
             data = json.dumps({"collections": [_collection_json(col, vs)]}, ensure_ascii=False)
             files[f"{n:02d}-{slugify(col.name)}{suffix}.js"] = (
-                f"// Design System Definer: {col.name} collection{suffix}. Run with use_figma.\n"
+                f"// Design System Definer: {_comment_safe(col.name)} collection{suffix}. Run with use_figma.\n"
                 f"const DATA = {data};\n{JS_HEADER}{JS_VARS}")
             n += 1
     styles = text_style_defs(collections, cfg)
