@@ -50,7 +50,8 @@ def style_dictionary_config(collections, cap=256):
     import itertools
     multi = [c for c in collections if c.name != "Primitives"]
     combos = []
-    for picks in itertools.product(*[c.modes for c in multi]):
+    product = itertools.product(*[c.modes for c in multi])
+    for picks in itertools.islice(product, cap + 1):  # cap + 1 detects truncation without building every combination
         src = ["tokens/Primitives.tokens.json"] + [f"tokens/{c.name}.{slugify(m)}.tokens.json"
                                                     for c, m in zip(multi, picks)]
         name = "-".join(slugify(m) for c, m in zip(multi, picks) if len(c.modes) > 1) or "tokens"
