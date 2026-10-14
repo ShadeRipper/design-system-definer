@@ -2,6 +2,14 @@
 
 Versions follow [semantic versioning](https://semver.org). Below 1.0, a minor bump (0.x) adds capability and may change details; a patch bump (0.x.y) is fixes only.
 
+## 1.0.3
+
+Fixes only. No changes to config keys, tokens, output file names or normal output (the sample build is byte-identical).
+
+- A collection name containing a line break (CR, LF, U+2028 or U+2029) can no longer end the generated `//` comment in a Figma build script and run as code. The name is collapsed to one line in the comment only; the data and file names are unchanged.
+- `sd.config.mjs` generation now stops after 256 combinations instead of building every combination of modes first, so a config with many multi-mode collections no longer hangs or runs out of memory. The truncation note is unchanged.
+- Added regression tests for both (`tests/test_hygiene.py`).
+
 ## 1.0.2
 
 - The skill is renamed from `define` to `defsys` (picker shows `design-system-definer:defsys`). Folder: `skills/defsys/`. Skill names allow only lowercase letters, digits and hyphens, so a dotted name is not valid.
